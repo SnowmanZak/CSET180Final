@@ -1,0 +1,119 @@
+* {
+    font-family: Verdana, sans-serif;
+}
+
+body {
+    background-color: #fffbc9;
+    cursor: url("/static/images/banana-cursor.png") 16 16 auto;
+}
+
+header {
+    background-color: #fffbe6;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 1rem 2rem;
+}
+
+
+.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.logo {
+    height: 125px;
+}
+
+.nav_bar {
+    display: flex;
+    gap: 1.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    padding-bottom: 10px;
+}
+
+.nav_bar a {
+    text-decoration: none;
+    color: #333300;
+    font-weight: bold;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: background-color 0.3s ease;
+}
+
+.nav_bar :first-child{
+    margin-left: 75px;
+}
+
+.nav_bar a:hover {
+    background-color: #ffe066;
+    color: #000;
+}
+
+.account {
+    margin-top: 1rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.account-btn {
+    text-decoration: none;
+    background-color: #ffcc00;
+    color: #333;
+    font-weight: bold;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.account-btn:hover {
+    background-color: #e6b800;
+    transform: translateY(-2px);
+}
+
+
+/* Footer CSS */
+
+.bottom {
+    padding-top: 40px;
+    padding-bottom: 40px;
+    display: flex;
+    justify-content: space-evenly;
+    background-color: #fffbe6;
+}
+
+.bottom a {
+    text-decoration: none;
+    color: black;
+    font-size: 14px;
+}
+
+.bottom a:hover {
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.pages-1 {
+    list-style: none;
+}
+
+.pages-2 {
+    list-style: none;
+}
+
+.contacts {
+    list-style: none;
+}
+
+

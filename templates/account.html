@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Account{% endblock %}
+
+{% block body %}
+    <style>
+        .account-container {
+            background-color: #fffbe6;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 600px;
+            margin: 2rem auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .account-container h2 {
+            color: #ffcc00;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            text-shadow: 1px 1px 2px #aaa;
+        }
+
+        .account-details {
+            text-align: left;
+            background-color: #ffffe0;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            border: 2px solid #cccc66;
+        }
+
+        .account-details p {
+            font-size: 1.1rem;
+            margin: 0.5rem 0;
+            color: #333300;
+        }
+    </style>
+
+    <div class="account-container">
+        <h2>Your Account Information</h2>
+
+        {% if account_details %}
+            <div class="account-details">
+                <p><strong>Name:</strong> {{ account_details.name }}</p>
+                <p><strong>Username:</strong> {{ account_details.username }}</p>
+                <p><strong>Email:</strong> {{ account_details.email }}</p>
+                <p><strong>User ID:</strong> {{ account_details.user_id }}</p>
+            </div>
+        {% else %}
+            <p>No account information found. Please check your login status or try again later.</p>
+        {% endif %}
+    </div>
+{% endblock %}

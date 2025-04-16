@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/styles/styles.css">
+    <title>Store</title>
+</head>
+<body>
+    <header>
+        <div class="top">
+            <div class="">
+                <img src="../static/images/logo.png" alt="logo" class="logo">
+                <ul class="nav_bar">
+                    <li><a href="{{ url_for('home') }}">Home</a></li>
+                    <li><a href="#">View Products</a></li>
+                    {% if user and user.user_type in ['vendor', 'admin'] %}
+                        {% if user and user.user_type == 'vendor' %}
+                            <li><a href="{{ url_for('product_create') }}">Create Product</a></li>
+                            <li><a href="#">Manage Products</a></li>
+                            <li><a href="#">Recieved Orders</a></li>
+                        {% else %}
+                            <li><a href="{{ url_for('product_create') }}">Create Product</a></li>
+                            <li><a href="#">Manage Products</a></li>
+                        {% endif %}
+                    {% elif user and user.user_type == 'customer' %}
+                        <li><a href="{{ url_for('account') }}">Account Details</a></li>
+                        <li><a href="#">Cart</a></li>
+                        <li><a href="#">Create Order</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <div class="account">
+                {% if logged_in == True %}
+                    <a href="{{ url_for ('log_out') }}" class="account-btn">Logout</a>
+                {% elif logged_in == False %}
+                    <a href="{{ url_for ('login') }}" class="account-btn">Login</a>
+                    <a href="{{ url_for('signup') }}" class="account-btn">Sign Up</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    {% block body %}
+    
+    {% endblock %}
+
+
+    <footer>
+        <div class="bottom"> 
+            <ul class="contacts">
+                <li><b>Contact Us</b></li>
+                <li><a href="">Email</a></li>
+            </ul>
+
+            <ul class="pages-1">
+                <li><b>Pages</b></li>
+                <li><a href="">Home Page</a></li>
+                <li><a href="">Home Page</a></li>
+            </ul>
+
+            <ul class="pages-2">
+                <li><p></p></li>
+                <br><li><a href="">Home Page</a></li>
+            </ul>
+        </div>
+    </footer>
+</body>
+</html>

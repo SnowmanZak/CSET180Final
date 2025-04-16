@@ -1,0 +1,119 @@
+{%extends 'base.html'%}
+
+{% block body %}
+
+<style>
+
+    .popup-overlay {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: none; /* Hidden by default */
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .popup-overlay.show {
+        display: flex; /* Show when class added */
+    }
+
+    .popup-content {
+        background: #fff;
+        padding: 20px 30px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        text-align: center;
+        max-width: 400px;
+        width: 90%;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .color-flex {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-evenly;
+    }
+    
+
+</style>
+
+<body>
+    <h2>Product Creation</h2>
+    <form action="/product-create" method="post">
+        <label for="name">Product Name: </label>
+        <input type="text" id="product-name" name="product-name" required><br><br>
+
+        <label for="product-description">Product Description: </label>
+        <input type="text" id="product-description" name="product-description" required><br><br>
+
+        <label for="warranty-period">Warranty Period: </label>
+        <input type="text" id="warranty-period" name="warranty-period" required><br><br>
+
+        <label for="category">Category: </label>
+        <input type="text" id="category" name="category" required><br><br>
+
+        <label for="size">Size:</label><br>
+        <input type="checkbox" id="xsmall" name="xsmall" value="xsmall">
+        <label for="xsmall">X-Small</label><br>
+        <input type="checkbox" id="small" name="small" value="small">
+        <label for="small">Small</label><br>
+        <input type="checkbox" id="medium" name="medium" value="medium">
+        <label for="medium">Medium</label><br>
+        <input type="checkbox" id="large" name="large" value="large">
+        <label for="large">Large</label><br>
+        <input type="checkbox" id="xlarge" name="xlarge" value="xlarge">
+        <label for="xlarge">X-Large</label><br><br>
+
+        <input type="submit" value="Submit"><br><br>
+    </form>
+
+    {% if step_one_creation_submit %}
+    <div class="popup-overlay show">
+        <div class="popup-content">
+            <form action="/color-submit" method="post">
+                <label for="product-color">Select your product color(s):</label>
+                <input type="color" id="product-color" name="product-color" value="#ff0000">
+                <input type="submit" value="Add Color"><br>
+                <p>Product Color(s):</p><br>
+                {% for row in rows %}
+                    <div class="color-flex" id='row-{{ row }}'></div>
+                {% endfor %}
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+</body>
+
+<script>
+    const colorList = {{ color_list|safe }}; 
+    let counter = 0;
+    let rowIndex = 0;
+
+    for (let i = 0; i < colorList.length; i++) {
+        if (counter >= 12) {
+            counter = 0;
+            rowIndex++;
+        }
+
+        const bubble = document.createElement("div");
+        bubble.style.width = "20px";
+        bubble.style.height = "20px";
+        bubble.style.backgroundColor = colorList[i];
+        bubble.style.borderRadius = "50%";
+        bubble.style.display = "inline-block";
+        bubble.style.margin = "5px";
+
+        const rowDiv = document.getElementById(`row-${rowIndex}`);
+        if (rowDiv) {
+            rowDiv.appendChild(bubble);
+        }
+
+        counter++;
+    }
+</script>
+
+
+{% endblock %}

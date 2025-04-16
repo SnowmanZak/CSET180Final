@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+</head>
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #fffbc9;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+}
+
+h2 {
+    color: #ffcc00;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    text-shadow: 1px 1px 2px #aaa;
+}
+
+form.signup {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+form.signup label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #333300;
+}
+
+form.signup input[type="text"],
+form.signup input[type="password"],
+form.signup select {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 1.2rem;
+    border: 1px solid #cccc66;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+form.signup input[type="submit"] {
+    background-color: #ffcc00;
+    border: none;
+    color: #333;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+}
+
+form.signup input[type="submit"]:hover {
+    background-color: #e6b800;
+}
+
+.error {
+    color: #cc0000;
+    margin-top: 1rem;
+    font-weight: bold;
+    background-color: #ffe6e6;
+    padding: 0.5rem;
+    border: 1px solid #cc0000;
+    border-radius: 8px;
+}
+.banana {
+    position: fixed;
+    top: -50px;
+    font-size: 2rem;
+    z-index: 9999;
+    animation-name: fall;
+    animation-timing-function: linear;
+    animation-iteration-count: 1;
+    user-select: none;
+    pointer-events: none;
+}
+
+@keyframes fall {
+    0% {
+        transform: translateY(0) rotate(0deg);
+    }
+    100% {
+        transform: translateY(100vh) rotate(360deg);
+    }
+}
+
+</style>
+
+
+
+<body>
+    <h2>Create Account</h2>
+    <form action="/signup" method="post" class="signup">
+        <label for="name">Name: </label>
+        <input type="text" id="name" name="name" required><br><br>
+
+        <label for="email">Email: </label>
+        <input type="text" id="email" name="email" required><br><br>
+
+        <label for="username">Username: </label>
+        <input type="text" id="username" name="username" required><br><br>
+
+        <label for="password">Password: </label>
+        <input type="password" id="password" name="password" required><br><br>
+
+        <select id="role" name="role">
+            <option value="Admin">Admin</option>
+            <option value="Vendor">Vendor</option>
+            <option value="Customer">Customer</option>
+        </select>
+
+        <input type="submit" value="Submit">
+    </form>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <script>
+        document.querySelector('.signup').addEventListener('submit', function (e) {
+            e.preventDefault(); 
+            bananaRain(); 
+    
+            setTimeout(() => {
+                e.target.submit();
+            }, 2000);
+        });
+    
+        function bananaRain() {
+            for (let i = 0; i < 30; i++) {
+                const banana = document.createElement('div');
+                banana.classList.add('banana');
+                banana.innerText = '🍌';
+                banana.style.left = Math.random() * 100 + 'vw';
+                banana.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                document.body.appendChild(banana);
+    
+                setTimeout(() => {
+                    banana.remove();
+                }, 4000);
+            }
+        }
+    </script>
+</body>
+</html>
