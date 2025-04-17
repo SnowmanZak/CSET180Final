@@ -1,0 +1,32 @@
+{%extends 'base.html'%}
+
+{% block body %}
+
+
+<h2>Chat</h2>
+
+<div class="chat-box">
+    {% for msg in messages %}
+        <div class="chat-message">
+            <p><strong>{{ 'You' if msg.sender_id == user.user_id else 'Vendor' }}:</strong></p>
+            
+            {% if msg.message %}
+                {% if msg.message.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')) and msg.message.startswith('http') %}
+                    <img src="{{ msg.message }}" alt="Pasted Image" style="max-width: 300px;"><br>
+                {% else %}
+                    <p>{{ msg.message }}</p>
+                {% endif %}
+            {% endif %}
+            
+            <small><em>{{ msg.sent_at }}</em></small>
+        </div>
+    {% endfor %}
+</div>
+
+<form method="post" action="{{ url_for('chat') }}">
+    <input type="hidden" name="vendor_id" value="{{ vendor_id }}">
+    <textarea name="message" placeholder="Type your message..." required></textarea><br>
+    <button type="submit">Send</button>
+</form>
+
+{% endblock %}

@@ -28,15 +28,22 @@
         max-width: 400px;
         width: 90%;
         animation: fadeIn 0.3s ease-in-out;
+        display: flex;
+        justify-content: space-evenly;
     }
 
     .color-flex {
         display: flex;
         flex-direction: row;
-        justify-content: space-evenly;
+    }
+
+    .bubble {
+        display: flex;
+        align-content: center;
+        justify-content: center;
+        font-size: 12px;
     }
     
-
 </style>
 
 <body>
@@ -54,17 +61,7 @@
         <label for="category">Category: </label>
         <input type="text" id="category" name="category" required><br><br>
 
-        <label for="size">Size:</label><br>
-        <input type="checkbox" id="xsmall" name="xsmall" value="xsmall">
-        <label for="xsmall">X-Small</label><br>
-        <input type="checkbox" id="small" name="small" value="small">
-        <label for="small">Small</label><br>
-        <input type="checkbox" id="medium" name="medium" value="medium">
-        <label for="medium">Medium</label><br>
-        <input type="checkbox" id="large" name="large" value="large">
-        <label for="large">Large</label><br>
-        <input type="checkbox" id="xlarge" name="xlarge" value="xlarge">
-        <label for="xlarge">X-Large</label><br><br>
+        
 
         <input type="submit" value="Submit"><br><br>
     </form>
@@ -72,7 +69,7 @@
     {% if step_one_creation_submit %}
     <div class="popup-overlay show">
         <div class="popup-content">
-            <form action="/color-submit" method="post">
+            <form action="/add-color" method="post">
                 <label for="product-color">Select your product color(s):</label>
                 <input type="color" id="product-color" name="product-color" value="#ff0000">
                 <input type="submit" value="Add Color"><br>
@@ -85,9 +82,36 @@
     </div>
     {% endif %}
 
+
+    {% if step_two_creation_submit %}
+    <div class="popup-overlay show">
+        <div class="popup-content">
+            <form action="/size-submit" method="post">
+                <label for="size">Size:</label><br>
+                <input type="checkbox" id="xsmall" name="xsmall" value="xsmall">
+                <label for="xsmall">X-Small</label><br>
+                <input type="checkbox" id="small" name="small" value="small">
+                <label for="small">Small</label><br>
+                <input type="checkbox" id="medium" name="medium" value="medium">
+                <label for="medium">Medium</label><br>
+                <input type="checkbox" id="large" name="large" value="large">
+                <label for="large">Large</label><br>
+                <input type="checkbox" id="xlarge" name="xlarge" value="xlarge">
+                <label for="xlarge">X-Large</label><br><br>
+
+                <input type="submit" value="Submit"><br><br>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    
 </body>
 
 <script>
+
+    // JavaScript for product color selector start
+
     const colorList = {{ color_list|safe }}; 
     let counter = 0;
     let rowIndex = 0;
@@ -105,6 +129,8 @@
         bubble.style.borderRadius = "50%";
         bubble.style.display = "inline-block";
         bubble.style.margin = "5px";
+        bubble.className = 'bubble';
+        bubble.id = `color-${i}`;
 
         const rowDiv = document.getElementById(`row-${rowIndex}`);
         if (rowDiv) {
@@ -113,6 +139,45 @@
 
         counter++;
     }
+
+    document.addEventListener('mouseover', function(event) {
+        if (event.target.classList.contains('bubble')) {
+            const targetId = event.target.id;
+            const element = document.getElementById(targetId);
+
+            console.log()
+            element.innerText = ' X';
+    
+            element.addEventListener("click", function() {
+
+                const rgb = element.style.backgroundColor; // Gets the rgb color of the bubble and stores it
+                const rgbValues = rgb.match(/\d+/g);  // Extracts the numbers 
+                // Code gotten from external source start
+                const hex = "#" + rgbValues.slice(0, 3).map(x =>
+                    parseInt(x).toString(16).padStart(2, '0')
+                ).join('');
+                // Code gotten from external source finish
+                
+                element.remove();
+                fetch(`/remove-color?color=${encodeURIComponent(hex)}`)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById("someContainer").innerHTML = html;
+                });            
+            });
+        }
+    });
+
+    document.addEventListener('mouseout', function(event) {
+        if (event.target.classList.contains('bubble')) {
+            event.target.innerText = '';
+        }
+    });
+
+
+
+    // JavaScript for product color selector end
+
 </script>
 
 

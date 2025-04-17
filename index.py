@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from sqlalchemy import create_engine, text
 import bcrypt
 import math
@@ -18,7 +18,13 @@ def inject_user():
 def home():
     user = get_logged_in_user()
     logged_in = bool(user)
-    return render_template('index.html', logged_in=logged_in, user=user)
+    vendors =[]
+    if user and user['user_type'] == 'customer':
+        with engine.begin() as conn:
+            result = conn.execute(text("SELECT user_id, name, username FROM users WHERE user_type = 'vendor'"))
+            vendors = [dict(row._mapping) for row in result]
+
+    return render_template('index.html', logged_in=logged_in, user=user, vendors=vendors)
 
 
 
@@ -155,22 +161,31 @@ def product_create():
 
 
 
-color_list = [] # Global variable for color-submit
+color_list = [] # Global variable for add-color
 
-@app.route('/color-submit', methods=['GET', 'POST'])
-def color_submit():
-    user = get_logged_in_user()
+@app.route('/add-color', methods=['GET', 'POST'])
+def add_color():
 
     if request.method == "POST":
         color = request.form.get('product-color')
         
         global color_list
-        color_list.append(color)
         
-        rows = math.ceil(len(color_list) / 12)
+        if color in color_list:
+            rows = math.ceil(len(color_list) / 12)
 
+            return render_template('productCreate.html', step_one_creation_submit=True, color_list=color_list, rows=range(rows))
+        else:
+            rows = math.ceil(len(color_list) / 12)
+
+            color_list.append(color)
+
+            return render_template('productCreate.html', step_one_creation_submit=True, color_list=color_list, rows=range(rows))
+
+ 
         
-        return render_template('productCreate.html', step_one_creation_submit=True, color_list=color_list, rows=range(rows))
+        
+
         # try:
         #     with engine.begin() as conn:
         #         conn.execute(
@@ -178,14 +193,101 @@ def color_submit():
         #     return render_template('productCreate.html', step_two_creation_submit=True)
         # except:
         #     return render_template('productCreate.html, step_two_creation_submit=False)
+        
+@app.route('/remove-color', methods=['GET', 'POST'])
+def remove_color():
+    color = request.args.get('color')
+    global color_list
+    
+    print(f'The color is {color}')
+    print(f'current list {color_list}')
+    
+    if color in color_list:
+        color_list.remove(color)
+        print('color removed')
+        
+    print(f'updated list {color_list}')
+        
+    return render_template("productCreate.html", color_list=color_list, step_one_creation_submit=True)
+
             
-# INSERT INTO users (name, email, username, password, user_type, logged_in)
-#                             VALUES (:name, :email, :username, :password, :user_type, :logged_in)
 
 
-# @app.route('/manage', methods = ['GET', 'POST])
-# def manage():
+# @app.route('size-submit', methods=['GET', 'POST'])
+# def size_submit():
+#     user = get_logged_in_user()
+#     if not user:
+#         return redirect(url_for('login'))
 
+#     selected_sizes = []
+
+#     for size in ['xsmall', 'small', 'medium', 'large', 'xlarge']:
+#         if request.form.get(size):
+#             selected_sizes.append(size)
+
+#     try:
+#         with engine.begin() as conn:
+#             result = conn.execute(
+#                 text('SELECT product_id FROM products WHERE vendor_id = :vendor_id ORDER BY product_id DESC LIMIT 1'),
+#                 {'vendor_id': user['user_id']}
+#             )
+#             product = result.mappings().first()
+#             if product:
+#                 for size in selected_sizes:
+#                     conn.execute(
+#                         text('INSERT INTO availablesizes (product_id, size) VALUES (:product_id, :size)'),
+#                         {'product_id': product['product_id'], 'size': size}
+#                     )
+
+#                 # Optionally fetch and return size list to display it
+#                 size_result = conn.execute(
+#                     text('SELECT size FROM availablesizes WHERE product_id = :product_id'),
+#                     {'product_id': product['product_id']}
+#                 )
+#                 size_list = [row['size'] for row in size_result]
+
+#                 return render_template('productCreate.html', step_three_creation_submit=True, size_list=size_list)
+#     except:
+#         return render_template('productCreate.html', step_three_creation_submit=False)
+
+#     return render_template('productCreate.html', step_three_creation_submit=True)
+
+
+
+
+@app.route('/chat', methods=['GET', 'POST'])
+def chat():
+    user = get_logged_in_user()
+    if not user:
+        return redirect(url_for('home'))
+
+    if request.method == 'GET':
+        vendor_id = request.args.get('vendor_id')
+        if not vendor_id:
+            return redirect(url_for('home'))
+
+        with engine.begin() as conn:
+            messages = conn.execute(text("""
+                SELECT * FROM chat
+                WHERE (sender_id = :user_id AND receiver_id = :vendor_id)
+                   OR (sender_id = :vendor_id AND receiver_id = :user_id)
+                ORDER BY sent_at ASC
+            """), {'user_id': user['user_id'], 'vendor_id': vendor_id}).fetchall()
+
+        return render_template('chat.html', messages=messages, user=user, vendor_id=vendor_id)
+
+    elif request.method == 'POST':
+        message = request.form.get('message')
+        receiver_id = request.form.get('vendor_id')
+
+        if message and receiver_id:
+            with engine.begin() as conn:
+                conn.execute(text("""
+                    INSERT INTO chat (sender_id, receiver_id, message)
+                    VALUES (:sender_id, :receiver_id, :message)
+                """), {'sender_id': user['user_id'], 'receiver_id': receiver_id, 'message': message})
+
+        return redirect(url_for('chat', vendor_id=receiver_id))
 
 
 #Functions

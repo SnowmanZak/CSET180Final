@@ -5,5 +5,19 @@
 
 <h1>Bananas</h1>
 
+{% if user and user.user_type == 'customer' %}
+  <form action="{{ url_for('chat') }}" method="get">
+      <label for="vendor_id">Message a Vendor:</label>
+      <select name="vendor_id" required>
+          {% for vendor in vendors %}
+                <option value="{{ vendor.user_id }}">{{ vendor.name }} ({{ vendor.username }})</option>
+          {% endfor %}
+      </select>
+      <button type="submit">Start Chat</button>
+  </form>
+{% endif %}
+
+
+
 
 {% endblock %}
