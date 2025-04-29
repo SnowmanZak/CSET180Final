@@ -18,6 +18,21 @@
 {% endif %}
 
 
+<!-- {% if user and user.user_type == 'vendor' %}
+  <h3>Incoming Chats</h3>
+  <ul>
+    {% for customer in incoming_chats %}
+      <li>
+        <form action="{{ url_for('chat') }}" method="get" style="display: inline;">
+          <input type="hidden" name="customer_id" value="{{ customer.user_id }}">
+          <button type="submit">Chat with {{ customer.name }} ({{ customer.username }})</button>
+        </form>
+      </li>
+    {% else %}
+      <li>No chats yet.</li>
+    {% endfor %}
+  </ul>
+{% endif %} -->
 
 
 {% endblock %}

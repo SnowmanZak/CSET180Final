@@ -13,7 +13,7 @@
                 <img src="../static/images/logo.png" alt="logo" class="logo">
                 <ul class="nav_bar">
                     <li><a href="{{ url_for('home') }}">Home</a></li>
-                    <li><a href="#">View Products</a></li>
+                    <li><a href="{{ url_for('view_products')}}">View Products</a></li>
                     {% if user and user.user_type in ['vendor', 'admin'] %}
                         {% if user and user.user_type == 'vendor' %}
                             <li><a href="{{ url_for('product_create') }}">Create Product</a></li>

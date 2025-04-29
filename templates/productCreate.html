@@ -1,7 +1,7 @@
 {%extends 'base.html'%}
 
 {% block body %}
-
+<link rel="stylesheet" href="../static/styles/styles.css">
 <style>
 
     .popup-overlay {
@@ -30,6 +30,7 @@
         animation: fadeIn 0.3s ease-in-out;
         display: flex;
         justify-content: space-evenly;
+        flex-direction: column;
     }
 
     .color-flex {
@@ -42,6 +43,7 @@
         align-content: center;
         justify-content: center;
         font-size: 12px;
+        font-weight: 800;
     }
     
 </style>
@@ -73,10 +75,19 @@
                 <label for="product-color">Select your product color(s):</label>
                 <input type="color" id="product-color" name="product-color" value="#ff0000">
                 <input type="submit" value="Add Color"><br>
-                <p>Product Color(s):</p><br>
+                <p>Product Color(s):</p>
                 {% for row in rows %}
                     <div class="color-flex" id='row-{{ row }}'></div>
                 {% endfor %}
+            </form>
+
+            <form action="/submit-color" method='post'>
+                <br><input type="submit" value="Submit Color(s)">
+                {% if empty_list == True %}
+                    <br><p style='color: red;'>A product must have atleast one color.</p>
+                {% else %}
+                    <p></p>
+                {% endif %}
             </form>
         </div>
     </div>
@@ -105,80 +116,151 @@
     </div>
     {% endif %}
 
+
+    {% if step_three_creation_submit %}
+    <div class="popup-overlay show">
+        <div class="popup-content">
+            
+            <form action="/submit-image" method="post">
+                <label for="image-{{ img_counter }}">Image</label>
+                <input type="text" id="image-{{ img_counter }}" name="image-{{ img_counter }}" placeholder="Enter image URL">
+                <button type="submit">Add Image</button>
+            </form>
     
+            <form action="/finalize-images" method="post" style="margin-top: 20px;">
+                <button type="submit" style="background-color: green; color: white;">Finalize Images & Continue</button>
+            </form>
+    
+            <p>Image(s):</p>
+            <div class="image-grid">
+                {% for img in submitted_images %}
+                    <div class="img-item">
+                        <img src="{{ img.url }}" alt="Image" width="100">
+                        <form action="/delete-image/{{ img.id }}" method="post" style="margin-top: 5px;">
+                            <button type="submit" style="background-color: red; color: white;">Delete</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+    
+        </div>
+    </div>
+    {% endif %}
+    
+
+    
+    <!-- {% if step_four_creation_submit %}
+    <div class="popup-overlay show">
+        <div class="popup-content">
+            {% if variants %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Color</th>
+                    <th>Size</th>
+                    <th>Inventory</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in variants %}
+                    <tr>
+                        <td>{{ v.color }}</td>
+                        <td>{{ v.size }}</td>
+                        <td>{{ v.inventory_count }}</td>
+                        <td>${{ "%.2f"|format(v.price) }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="text-align: center;">No variants found.</p>
+    {% endif %}
+        </div>
+    </div>
+    {% endif %} -->
+
+
+
+
 </body>
 
 <script>
 
+
     // JavaScript for product color selector start
 
-    const colorList = {{ color_list|safe }}; 
-    let counter = 0;
-    let rowIndex = 0;
 
-    for (let i = 0; i < colorList.length; i++) {
-        if (counter >= 12) {
-            counter = 0;
-            rowIndex++;
+    document.addEventListener("DOMContentLoaded", function () {
+        const colorList = {{ color_list|safe }}; 
+        let counter = 0;
+        let rowIndex = 0;
+
+        for (let i = 0; i < colorList.length; i++) {
+            if (counter >= 12) {
+                counter = 0;
+                rowIndex++;
+            }
+
+            const bubble = document.createElement("div");
+            bubble.style.width = "20px";
+            bubble.style.height = "20px";
+            bubble.style.backgroundColor = colorList[i];
+            bubble.style.borderRadius = "50%";
+            bubble.style.display = "inline-block";
+            bubble.style.margin = "5px";
+            bubble.className = 'bubble';
+            bubble.id = `color-${i}`;
+
+            const rowDiv = document.getElementById(`row-${rowIndex}`);
+            if (rowDiv) {
+                rowDiv.appendChild(bubble);
+            }
+
+            counter++;
         }
 
-        const bubble = document.createElement("div");
-        bubble.style.width = "20px";
-        bubble.style.height = "20px";
-        bubble.style.backgroundColor = colorList[i];
-        bubble.style.borderRadius = "50%";
-        bubble.style.display = "inline-block";
-        bubble.style.margin = "5px";
-        bubble.className = 'bubble';
-        bubble.id = `color-${i}`;
+        document.addEventListener('mouseover', function(event) {
+            if (event.target.classList.contains('bubble')) {
+                const targetId = event.target.id;
+                const element = document.getElementById(targetId);
 
-        const rowDiv = document.getElementById(`row-${rowIndex}`);
-        if (rowDiv) {
-            rowDiv.appendChild(bubble);
-        }
+                console.log()
+                element.innerText = ' X';
+        
+                element.addEventListener("click", function() {
 
-        counter++;
-    }
+                    const rgb = element.style.backgroundColor; // Gets the rgb color of the bubble and stores it
+                    const rgbValues = rgb.match(/\d+/g);  // Extracts the numbers 
+                    // Code gotten from external source start
+                    const hex = "#" + rgbValues.slice(0, 3).map(x =>
+                        parseInt(x).toString(16).padStart(2, '0')
+                    ).join('');
+                    // Code gotten from external source finish
+                    
+                    element.remove();
+                    fetch(`/remove-color?color=${encodeURIComponent(hex)}`)
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById("someContainer").innerHTML = html;
+                    });            
+                });
+            }
+        });
 
-    document.addEventListener('mouseover', function(event) {
-        if (event.target.classList.contains('bubble')) {
-            const targetId = event.target.id;
-            const element = document.getElementById(targetId);
+        document.addEventListener('mouseout', function(event) {
+            if (event.target.classList.contains('bubble')) {
+                event.target.innerText = '';
+            }
+        });
 
-            console.log()
-            element.innerText = ' X';
+
+    });
+
     
-            element.addEventListener("click", function() {
-
-                const rgb = element.style.backgroundColor; // Gets the rgb color of the bubble and stores it
-                const rgbValues = rgb.match(/\d+/g);  // Extracts the numbers 
-                // Code gotten from external source start
-                const hex = "#" + rgbValues.slice(0, 3).map(x =>
-                    parseInt(x).toString(16).padStart(2, '0')
-                ).join('');
-                // Code gotten from external source finish
-                
-                element.remove();
-                fetch(`/remove-color?color=${encodeURIComponent(hex)}`)
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById("someContainer").innerHTML = html;
-                });            
-            });
-        }
-    });
-
-    document.addEventListener('mouseout', function(event) {
-        if (event.target.classList.contains('bubble')) {
-            event.target.innerText = '';
-        }
-    });
-
-
 
     // JavaScript for product color selector end
+    
 
 </script>
-
-
 {% endblock %}

@@ -117,3 +117,11 @@ header {
 }
 
 
+input[type="number"], input[type="datetime-local"] {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+}
+
+
+
