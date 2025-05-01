@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Product</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #fffbea;
+            color: #4e3b1f;
+            padding: 30px;
+        }
+
+        h1, h3 {
+            color: #d4a41a;
+        }
+
+        .image-thumb {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            margin: 5px;
+            border-radius: 6px;
+            border: 3px solid #f6e173;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        .variant-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .variant-table th, .variant-table td {
+            border: 1px solid #f5d76e;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .variant-table th {
+            background-color: #fff2b3;
+            color: #6d4c1d;
+        }
+
+        .form-input {
+            width: 100px;
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid #e6c663;
+            background-color: #fff9e1;
+        }
+
+        .color-swatch {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #dab01d;
+            box-shadow: 0 0 4px rgba(0,0,0,0.2);
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        button {
+            background-color: #f5c71a;
+            color: #4e3b1f;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #e6b800;
+        }
+    </style>
+
+    
+</head>
+<body>
+    <h1>Edit Product: {{ product.title }}</h1>
+
+    <h3>Description</h3>
+    <p>{{ product.description }}</p>
+
+    <h3>Warranty Period</h3>
+    <p>{{ product.warranty_period or "None" }}</p>
+
+    <h3>Images</h3>
+    <div>
+        {% for img_url in images %}
+            <img class="image-thumb" src="{{ img_url }}" alt="Product Image">
+        {% endfor %}
+    </div>
+
+    <h3>Available Colors</h3>
+    <ul>
+        {% for color in colors %}
+            <li>{{ color }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Available Sizes</h3>
+    <ul>
+        {% for size in sizes %}
+            <li>{{ size }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Variants</h3>
+    <form method="POST" action="/update-variants/{{ product.product_id }}">
+        <table class="variant-table">
+            <thead>
+                <tr>
+                    <th>Color</th>
+                    <th>Size</th>
+                    <th>Price</th>
+                    <th>Inventory</th>
+                    <th>Discount Price</th>
+                    <th>Discount End Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for variant in variants %}
+                <tr>
+                    <td>
+                        <div class="color-swatch" style="background-color: {{ variant.color | lower }};" title="{{ variant.color }}"></div>
+                    </td>
+                    <td>{{ variant.size }}</td>
+                    <td><input class="form-input" type="number" name="price_{{ variant.variant_id }}" value="{{ variant.price }}"></td>
+                    <td><input class="form-input" type="number" name="inventory_{{ variant.variant_id }}" value="{{ variant.inventory_count }}"></td>
+                    <td><input class="form-input" type="number" name="discount_price_{{ variant.variant_id }}" value="{{ variant.discount_price or '' }}"></td>
+                    <td><input class="form-input" type="datetime-local" name="discount_end_{{ variant.variant_id }}" value="{{ variant.discount_end_date.strftime('%Y-%m-%dT%H:%M') if variant.discount_end_date else '' }}"></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <br>
+        <button type="submit">🍌 Save Changes</button>
+    </form>    
+</body>
+</html>

@@ -4,38 +4,84 @@
 <link rel="stylesheet" href="../static/styles/styles.css">
 <style>
 
+<style>
+    body {
+        font-family: 'Comic Sans MS', 'Arial', sans-serif;
+        background-color: #fffbea;
+        color: #5c4400;
+        padding: 20px;
+    }
+
+    h2 {
+        color: #f4c542;
+        text-shadow: 1px 1px 2px #e0b400;
+    }
+
+    input[type="text"],
+    input[type="color"],
+    input[type="number"],
+    input[type="datetime-local"] {
+        padding: 8px;
+        border-radius: 5px;
+        border: 2px solid #ffe066;
+        background-color: #fff9d6;
+        margin-top: 5px;
+        margin-bottom: 10px;
+        width: 100%;
+    }
+
+    input[type="checkbox"] {
+        margin-right: 5px;
+    }
+
+    input[type="submit"],
+    button {
+        background-color: #f4c542;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        color: #5c4400;
+        transition: background-color 0.2s ease;
+    }
+
+    input[type="submit"]:hover,
+    button:hover {
+        background-color: #ffd93b;
+    }
+
     .popup-overlay {
         position: fixed;
         top: 0; left: 0;
         width: 100vw; height: 100vh;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: none; /* Hidden by default */
+        background-color: rgba(255, 235, 100, 0.5);
+        display: none;
         justify-content: center;
         align-items: center;
         z-index: 9999;
     }
 
     .popup-overlay.show {
-        display: flex; /* Show when class added */
+        display: flex;
     }
 
     .popup-content {
-        background: #fff;
-        padding: 20px 30px;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        text-align: center;
-        max-width: 400px;
+        background: #fff8c6;
+        padding: 30px 40px;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        max-width: 500px;
         width: 90%;
         animation: fadeIn 0.3s ease-in-out;
-        display: flex;
-        justify-content: space-evenly;
-        flex-direction: column;
+        border: 3px dashed #f4c542;
     }
 
     .color-flex {
         display: flex;
         flex-direction: row;
+        gap: 10px;
+        margin-top: 10px;
     }
 
     .bubble {
@@ -45,6 +91,62 @@
         font-size: 12px;
         font-weight: 800;
     }
+
+    .image-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .img-item {
+        background-color: #fffbe7;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid #ffe066;
+        text-align: center;
+    }
+
+    .img-item img {
+        border-radius: 5px;
+    }
+
+    label {
+        font-weight: bold;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    th, td {
+        padding: 10px;
+        border: 2px solid #ffe066;
+        background-color: #fffcd2;
+    }
+
+    th {
+        background-color: #ffe066;
+    }
+
+    input[type="color"] {
+    width: 80px;
+    height: 50px;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+    box-shadow: 0 0 4px rgba(0,0,0,0.3);
+}
+
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
     
 </style>
 
@@ -63,9 +165,18 @@
         <label for="category">Category: </label>
         <input type="text" id="category" name="category" required><br><br>
 
-        
+        {% if user_type == 'admin' %}
+        <label for="vendor_id">Select Vendor:</label>
+        <select name="vendor_id" id="vendor_id" required>
+            <option value="" disabled selected>Select a vendor</option>
+            {% for vendor in vendors %}
+                <option value="{{ vendor.user_id }}">{{ vendor.username }}</option>
+            {% endfor %}
+        </select><br><br>
+        {% endif %}
 
-        <input type="submit" value="Submit"><br><br>
+
+        <input type="submit" value="Submit 🍌"><br><br>
     </form>
 
     {% if step_one_creation_submit %}
@@ -149,38 +260,6 @@
     
 
     
-    <!-- {% if step_four_creation_submit %}
-    <div class="popup-overlay show">
-        <div class="popup-content">
-            {% if variants %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Color</th>
-                    <th>Size</th>
-                    <th>Inventory</th>
-                    <th>Price</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for v in variants %}
-                    <tr>
-                        <td>{{ v.color }}</td>
-                        <td>{{ v.size }}</td>
-                        <td>{{ v.inventory_count }}</td>
-                        <td>${{ "%.2f"|format(v.price) }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p style="text-align: center;">No variants found.</p>
-    {% endif %}
-        </div>
-    </div>
-    {% endif %} -->
-
-
 
 
 </body>
@@ -257,7 +336,6 @@
 
     });
 
-    
 
     // JavaScript for product color selector end
     

@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<style>
+    body {
+        background-color: #fffce6;
+        font-family: Arial, sans-serif;
+        color: #3b2f00;
+        padding: 40px;
+    }
+
+    .product-detail {
+        background-color: #fff8cc;
+        border: 2px solid #e6d25a;
+        border-radius: 20px;
+        padding: 30px;
+        max-width: 800px;
+        margin: auto;
+        box-shadow: 0 4px 10px rgba(139, 117, 0, 0.2);
+    }
+
+    .product-detail h1 {
+        font-size: 2em;
+        margin-bottom: 10px;
+        color: #5e4d00;
+    }
+
+    .product-detail p {
+        margin: 8px 0;
+        font-size: 1.1em;
+    }
+
+    .product-images img {
+        border-radius: 10px;
+        margin: 10px;
+        border: 2px solid #e0c94d;
+        background-color: #fffde1;
+        padding: 4px;
+    }
+
+    .product-variants {
+        margin-top: 30px;
+    }
+
+    .product-variants h3 {
+        color: #4a3e00;
+        margin-bottom: 10px;
+    }
+
+    .variant-item {
+        background-color: #fffbe0;
+        border: 1px solid #e6cd52;
+        border-radius: 15px;
+        padding: 15px;
+        margin-bottom: 15px;
+        list-style: none;
+        box-shadow: 0 2px 5px rgba(181, 150, 0, 0.15);
+    }
+
+    .variant-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+
+    .color-block {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 1px solid #aaa;
+    }
+
+    .size {
+        font-weight: bold;
+        padding: 4px 8px;
+        background-color: #f6e98c;
+        border-radius: 8px;
+        font-size: 0.95em;
+    }
+
+    .price {
+        font-weight: bold;
+        color: #b08400;
+    }
+
+    .price del {
+        color: #888;
+        margin-right: 8px;
+    }
+
+    form {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    input[type="number"] {
+        width: 60px;
+        padding: 5px;
+        border-radius: 5px;
+        border: 1px solid #c4af00;
+        background-color: #fffcd1;
+    }
+
+    button[type="submit"] {
+        background-color: #ffe135;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-weight: bold;
+        color: #4a3b00;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    button[type="submit"]:hover {
+        background-color: #f7d600;
+    }
+
+    .back-button {
+        display: inline-block;
+        margin: 20px 0;
+        padding: 8px 16px;
+        background-color: #ffe135;
+        color: #4a3b00;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .back-button:hover {
+        background-color: #f7d600;
+    }
+
+    .stock {
+        font-size: 0.95em;
+        color: #333;
+    }
+
+    .discount-note {
+        font-size: 0.85em;
+        color: #a87f00;
+    }
+</style>
+
+<a href="{{ url_for('view_products') }}" class="back-button">← Back to Products</a>
+
+<div class="product-detail">
+    <h1>{{ product.title }}</h1>
+    <p>{{ product.description }}</p>
+    <p><strong>Vendor:</strong> {{ product.vendor }}</p>
+    <p><strong>Warranty:</strong> {{ product.warranty_period }}</p>
+    <p><strong>Category:</strong> {{ product.category }}</p>
+
+    <div class="product-images">
+        {% for img in images %}
+            <img src="{{ img }}" alt="Product Image" width="150">
+        {% endfor %}
+    </div>
+
+    <div class="product-variants">
+        <h3>Select Your Variant:</h3>
+        <ul>
+            {% for variant in variants %}
+                <li class="variant-item">
+                    <div class="variant-info">
+                        <div class="color-block" style="background-color: {{ variant.color | lower }};" title="{{ variant.color }}"></div>
+                        <span class="size">{{ variant.size }}</span>
+
+                        {% set discounted = (variant.price - variant.discount_price)
+                            if variant.discount_price and variant.discount_end_date and variant.discount_end_date > now
+                            else None %}
+
+                        <span class="price">
+                            {% if discounted %}
+                                <del>${{ '%.2f' | format(variant.price) }}</del>
+                                <strong>${{ '%.2f' | format(discounted) }}</strong>
+                                <div class="discount-note">(discount ends {{ variant.discount_end_date.strftime('%Y-%m-%d') }})</div>
+                            {% else %}
+                                ${{ '%.2f' | format(variant.price) }}
+                            {% endif %}
+                        </span>
+
+                        <span class="stock">Stock: {{ variant.inventory_count }}</span>
+                    </div>
+
+                    {% if variant.inventory_count > 0 %}
+                        <form action="{{ url_for('add_to_cart', product_id=product.product_id, variant_id=variant.variant_id) }}" method="post">
+                            <label for="quantity_{{ variant.variant_id }}">Quantity:</label>
+                            <input type="number" name="quantity" id="quantity_{{ variant.variant_id }}" value="1" min="1" max="{{ variant.inventory_count }}" required>
+                            <button type="submit">Add to Cart</button>
+                        </form>                           
+                    {% else %}
+                        <p style="color: red;"><strong>Out of stock</strong></p>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

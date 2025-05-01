@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+<style>
+body {
+    background-color: #fffce6;
+    font-family: Arial, sans-serif;
+    color: #3b2f00;
+    padding: 40px;
+}
+
+h2, h3 {
+    color: #5e4d00;
+}
+
+.cart-container {
+    background-color: #fff8cc;
+    border: 2px solid #e6d25a;
+    margin: auto;
+    margin-top: 80px;
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 800px;
+    box-shadow: 0 4px 10px rgba(139, 117, 0, 0.2);
+}
+
+.cart-container ul {
+    list-style: none;
+    padding: 0;
+}
+
+.cart-container li {
+    background-color: #fffbe0;
+    border: 1px solid #e6cd52;
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 5px rgba(181, 150, 0, 0.1);
+}
+
+.color-dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid #aaa;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+.cart-container a {
+    color: #ba8b00;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.cart-container a:hover {
+    text-decoration: underline;
+}
+
+.remove-btn {
+    background-color: red;
+    color: white;
+    border-radius: 6px;
+    border-color: white;
+}
+</style>
+
+<div class="cart-container">
+    {% if not user %}
+        <p>Please <a href="{{ url_for('login') }}">log in</a> to view your cart.</p>
+    {% else %}
+        <h2>Your Cart</h2>
+        <ul id="cart-list">
+            {% for item in cart_items %}
+                <li id="cart-item-{{ item.cart_id }}">
+                    <strong>{{ item.product_name }}</strong><br>
+                    <span class="color-dot" style="background-color: {{ item.color | lower }};" title="{{ item.color }}"></span>
+                    {{ item.color }} / {{ item.size }}<br>
+                    Quantity: {{ item.quantity }}<br>
+                    Price: ${{ '%.2f' | format(item.price) }}<br>
+                    Subtotal: ${{ '%.2f' | format(item.subtotal) }}<br>
+                    <button class="remove-btn" data-cart-id="{{ item.cart_id }}">Remove</button>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <h3>Total: $<span id="cart-total">{{ '%.2f' | format(total) }}</span></h3>
+
+        <script>
+            document.querySelectorAll('.remove-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const cartId = this.dataset.cartId;
+
+                    fetch(`/remove-from-cart/${cartId}`, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network error');
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            const itemEl = document.getElementById(`cart-item-${cartId}`);
+                            if (itemEl) itemEl.remove();
+
+                            location.reload(); 
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Failed to remove item:', err);
+                    });
+                });
+            });
+        </script>
+    {% endif %}
+</div>
+
+{% endblock %}
