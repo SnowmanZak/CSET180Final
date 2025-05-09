@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<style>
+    body {
+        background-color: #fffce6;
+        font-family: Arial, sans-serif;
+        color: #3b2f00;
+        margin: 0;
+        padding: 0;
+    }
+
+    .checkout-container {
+        background-color: #fff8cc;
+        border: 2px solid #e6d25a;
+        border-radius: 15px;
+        padding: 30px;
+        max-width: 700px;
+        margin: 80px auto;
+        box-shadow: 0 4px 10px rgba(139, 117, 0, 0.2);
+    }
+
+    h2, h3 {
+        color: #5e4d00;
+        margin-bottom: 20px;
+    }
+
+    ul {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 20px 0;
+    }
+
+    .checkout-container li {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-bottom: 1px solid #e6cd52;
+    }
+
+    .checkout-btn {
+        background-color: #5e4d00;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+    }
+
+    .checkout-btn:hover {
+        background-color: #7d6500;
+    }
+</style>
+
+
+<div class="checkout-container">
+    <h2>Review Your Order</h2>
+
+    <ul>
+        {% for item in cart_items %}
+        <li>
+            <strong>{{ item.product_name }}</strong><br>
+            {{ item.color }} / {{ item.size }}<br>
+            Quantity: {{ item.quantity }}<br>
+            Price: ${{ '%.2f' | format(item.price) }}<br>
+            Subtotal: ${{ '%.2f' | format(item.subtotal) }}
+        </li>
+        {% endfor %}
+    </ul>
+
+    <h3>Total: ${{ '%.2f' | format(total) }}</h3>
+
+    <form action="{{ url_for('checkout') }}" method="POST">
+        <button type="submit" class="checkout-btn">Place Order</button>
+    </form>
+</div>
+{% endblock %}

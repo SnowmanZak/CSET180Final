@@ -119,7 +119,7 @@ create table complaints(
 	complaint_id int primary key auto_increment,
     user_id int not null,
     order_id int not null,
-    product_id int not null,
+    variant_id_id int not null,
     title varchar(255) not null,
     description text not null,
     demand enum('return', 'refund', 'warranty claim') not null,
@@ -128,7 +128,7 @@ create table complaints(
     image_url varchar(255),
     foreign key (user_id) references users(user_id),
     foreign key (order_id) references orders(order_id),
-    foreign key (product_id) references products(product_id) on delete cascade
+    foreign key (variant_id) references productvariants(variant_id) on delete cascade
 );
 select * from complaints;
 

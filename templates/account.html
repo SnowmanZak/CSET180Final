@@ -8,7 +8,7 @@
             background-color: #fffbe6;
             padding: 2rem;
             border-radius: 12px;
-            max-width: 600px;
+            max-width: 800px;
             margin: 2rem auto;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             text-align: center;
@@ -27,6 +27,7 @@
             padding: 1rem 2rem;
             border-radius: 10px;
             border: 2px solid #cccc66;
+            margin-bottom: 2rem;
         }
 
         .account-details p {
@@ -34,20 +35,118 @@
             margin: 0.5rem 0;
             color: #333300;
         }
+
+        .order-block {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e6cd52;
+        }
+
+        .status {
+            font-weight: bold;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        button.btn.btn-warning {
+            background-color: #ffe135;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: bold;
+            color: #4a3b00;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            text-decoration: none;
+        }
+
+        button.btn.btn-warning:hover {
+            background-color: #f7d600;
+        }
+
+        button.btn.btn-return {
+            margin-left: 10px;
+            background-color: #ff4d4d;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: bold;
+            color: #4a3b00;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            text-decoration: none;
+        }
+
+        button.btn.btn-return:hover {
+            background-color: #cc0000;
+        }
+        .button-group {
+            margin-top: 5px;
+            margin-bottom: 5px;
+            display: flex;
+            gap: 0.5rem; 
+            justify-content: center;
+        }
+
+        .button-group a {
+            text-decoration: none;
+        }
+
     </style>
 
-    <div class="account-container">
-        <h2>Your Account Information</h2>
+<div class="account-container">
+    <h2>Your Account Information</h2>
 
-        {% if account_details %}
-            <div class="account-details">
-                <p><strong>Name:</strong> {{ account_details.name }}</p>
-                <p><strong>Username:</strong> {{ account_details.username }}</p>
-                <p><strong>Email:</strong> {{ account_details.email }}</p>
-                <p><strong>User ID:</strong> {{ account_details.user_id }}</p>
+    {% if account_details %}
+        <div class="account-details">
+            <p><strong>Name:</strong> {{ account_details.name }}</p>
+            <p><strong>Username:</strong> {{ account_details.username }}</p>
+            <p><strong>Email:</strong> {{ account_details.email }}</p>
+            <p><strong>User ID:</strong> {{ account_details.user_id }}</p>
+        </div>
+    {% else %}
+        <p>No account information found. Please check your login status or try again later.</p>
+    {% endif %}
+
+    <h3>Your Order History</h3>
+
+    {% if orders %}
+        {% for order in orders %}
+            <div class="order-block">
+                <h4>Order #{{ order.order_id }} - {{ order.order_date.strftime('%Y-%m-%d %H:%M') }}</h4>
+                <p class="status">Status: {{ order.status }}</p>
+                <ul>
+                    {% for item in order_details[order.order_id] %}
+                        <li>
+                            {{ item.product_name }} ({{ item.color }} / {{ item.size }}) - 
+                            Quantity: {{ item.quantity }} - 
+                            Price: ${{ '%.2f' | format(item.price) }}
+
+                            {% if order.status == 'shipped' %}
+                            <div class="button-group">
+                                <a href="{{ url_for('submit_review', product_id=item.product_id) }}">
+                                    <button class="btn btn-warning">Leave Review</button>
+                                </a>  
+                                <a href="{{ url_for('submit_complaint', variant_id=item.variant_id, order_id=item.order_id) }}">
+                                    <button class="btn btn-return">Return Product</button>
+                                </a>                                                              
+                            </div>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <p><strong>Total: ${{ '%.2f' | format(order.total_price) }}</strong></p>
             </div>
-        {% else %}
-            <p>No account information found. Please check your login status or try again later.</p>
-        {% endif %}
-    </div>
+        {% endfor %}
+    {% else %}
+        <p>No orders found.</p>
+    {% endif %}
+</div>
 {% endblock %}

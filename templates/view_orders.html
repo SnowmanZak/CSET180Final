@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<style>
+    .vendor-orders-container {
+        font-family: 'Comic Sans MS', 'Arial', sans-serif;
+        background-color: #fffbea;
+        color: #5c4400;
+        padding: 20px;
+    }
+
+    h2 {
+        color: #f4c542;
+        text-shadow: 1px 1px 2px #e0b400;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    th, td {
+        padding: 10px;
+        border: 2px solid #ffe066;
+        background-color: #fffcd2;
+    }
+
+    th {
+        background-color: #ffe066;
+    }
+
+    select, button {
+        padding: 6px;
+        border-radius: 5px;
+        border: 1px solid #ffe066;
+        background-color: #fff9d6;
+        color: #5c4400;
+        font-weight: bold;
+    }
+
+    select:hover, button:hover {
+        background-color: #ffd93b;
+        cursor: pointer;
+    }
+</style>
+
+<div class="vendor-orders-container">
+    <h2>Received Orders</h2>
+    <table>
+        <tr>
+            <th>Order ID</th>
+            <th>User ID</th>
+            <th>Status</th>
+            <th>Total Price</th>
+            <th>Date</th>
+            <th>Action</th>
+        </tr>
+        {% for order in orders %}
+        <tr>
+            <td>{{ order.order_id }}</td>
+            <td>{{ order.user_id }}</td>
+            <td>
+                {% if order.status == 'confirmed' or order.status == 'handed to delivery' %}
+                  <form method="POST" action="{{ url_for('update_order_status') }}">
+                      <input type="hidden" name="order_id" value="{{ order.order_id }}">
+                      <select name="status" onchange="this.form.submit()">
+                          <option disabled selected>{{ order.status }}</option>
+                          {% if order.status == 'confirmed' %}
+                              <option value="handed to delivery">handed to delivery</option>
+                          {% elif order.status == 'handed to delivery' %}
+                              <option value="shipped">shipped</option>
+                          {% endif %}
+                      </select>
+                  </form>
+                {% else %}
+                  {{ order.status }}
+                {% endif %}
+              </td>
+              
+            <td>${{ '%.2f' | format(order.total_price) }}</td>
+            <td>{{ order.order_date }}</td>
+            <td><a href="{{ url_for('vendor_view_order', order_id=order.order_id) }}">View</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

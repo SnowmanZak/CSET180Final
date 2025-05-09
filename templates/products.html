@@ -97,23 +97,105 @@ input:focus {
     border: 1px solid #ccc;
 }
 
+.div-flex {
+    display: flex;
+    align-items: center;
+}
+
+.filter-div {
+    margin-left: 10px;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+    border: 2px, solid, black;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f1f1f1;
+    min-width: 520px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    padding: 12px 16px;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.button-filter-div {
+    background-color: #FFFBE6;
+    cursor: pointer;
+    border: none;
+    padding: 8px;
+}
+
+.dropdown-content input:hover {
+    background-color: #ddd;
+}
+
 </style>
 
-
-</style>
-
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=search" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
 
 <body>
     <div class='content-box'>
-        <div class='search-div'>
-            <form action="/search-products" method="POST" class='inner-search-div'>
-                <input type="text" id="search-bar" name="search-bar" placeholder="Search">
-                <button type="submit" class='search-submit-btn'>
-                    <span class="material-symbols-outlined">search</span>
-                </button>
-            </form>
-        </div> 
+        <div class='div-flex'>
+            <div class='search-div'>
+                <form action="/search-products" method="POST" class='inner-search-div'>
+                    <input type="text" id="search-bar" name="search-bar" placeholder="Search">
+                    <button type="submit" class='search-submit-btn'>
+                        <span class="material-symbols-outlined">search</span>
+                    </button>
+                </form>
+            </div> 
+            <div class='filter-div'>
+                <div class="dropdown">
+                    <button class='button-filter-div'>
+                        <span class="material-symbols-outlined">filter_alt</span>
+                    </button>
+                    <div class="dropdown-content">
+                        <form action="/filter-submit" method="POST">
+                            <b>Color</b><br>
+                            <label><input type="checkbox" name="color" value="black"> Black</label>
+                            <label><input type="checkbox" name="color" value="white"> White</label>
+                            <label><input type="checkbox" name="color" value="grey"> Grey</label>
+                            <label><input type="checkbox" name="color" value="red"> Red</label>
+                            <label><input type="checkbox" name="color" value="orange"> Orange</label>
+                            <label><input type="checkbox" name="color" value="yellow"> Yellow</label>
+                            <label><input type="checkbox" name="color" value="blue"> Blue</label>
+                            <label><input type="checkbox" name="color" value="purple"> Purple</label>
+                            <label><input type="checkbox" name="color" value="pink"> Pink</label>
+                            <label><input type="checkbox" name="color" value="other"> Other</label>
+                            <br><br><b>Size</b><br>
+                            <label><input type="checkbox" name="size" value="xsmall"> X-Small</label>
+                            <label><input type="checkbox" name="size" value="small"> Small</label>
+                            <label><input type="checkbox" name="size" value="medium"> Medium</label>
+                            <label><input type="checkbox" name="size" value="large"> Large</label>
+                            <label><input type="checkbox" name="size" value="xlarge"> X-Large</label>
+                            <br><br><b>Category</b><br>
+                            <label><input type="checkbox" name="category" value="automotive"> Automotive</label>
+                            <label><input type="checkbox" name="category" value="beauty-personal-care"> Beauty & Personal Care</label>
+                            <label><input type="checkbox" name="category" value="books"> Books</label>
+                            <label><input type="checkbox" name="category" value="clothes"> Clothes</label>
+                            <label><input type="checkbox" name="category" value="electronics"> Electronics</label>
+                            <label><input type="checkbox" name="category" value="food"> Food</label>
+                            <label><input type="checkbox" name="category" value="home-kitchen"> Home & Kitchen</label>
+                            <label><input type="checkbox" name="category" value="tools"> Tools</label><br>
+                            <label><input type="checkbox" name="category" value="toys-games"> Toys & Games</label>
+                            <label><input type="checkbox" name="category" value="video-games"> Video Games</label>
+                            <br><br><b>Stock</b><br>
+                            <label><input type="checkbox" name="stock" value="in-stock"> In stock</label>
+                            <br><br><button type="submit">Apply</button>
+                        </form>
+                    </div>
+                </div>
+            </div>              
+        </div>
+        
 
         <div class='product-page-div'>
             {% if products == 'none' %}

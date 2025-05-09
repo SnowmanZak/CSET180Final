@@ -1,6 +1,129 @@
 {%extends 'base.html'%}
 
 {% block body %}
+<style>
+  .recent-reviews {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+  }
+
+  .review-card {
+      background-color: #fffbe6;  
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border: 2px solid #f7e16f;  
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .review-card:last-child{
+    margin-bottom: 50px;
+  }
+
+  .review-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  .review-card h4 {
+      font-size: 1.4rem;
+      color: #f7d600;  
+      font-weight: bold;
+      margin-bottom: 0.8rem;
+  }
+
+  .review-card p {
+      font-size: 1rem;
+      color: #5d3d00;  
+      margin: 0.5rem 0;
+  }
+
+  .review-card p strong {
+      color: #f7d600;  
+  }
+
+  .review-card em {
+      font-size: 0.9rem;
+      color: #f7d600;  
+  }
+
+    body {
+        background-color: #fffde7;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    h2, h3, h4 {
+        color: #e1b12c;
+        text-align: center;
+    }
+
+    .section-container {
+        max-width: 900px;
+        margin: auto;
+        padding: 20px;
+        background-color: #fff9db;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(241, 196, 15, 0.2);
+        margin-bottom: 30px;
+    }
+
+    select, button, input {
+        border-radius: 8px;
+        padding: 8px;
+        border: 2px solid #f4d35e;
+        margin-top: 10px;
+        font-size: 1rem;
+    }
+
+    button {
+        background-color: #f4d35e;
+        font-weight: bold;
+        color: #000;
+        cursor: pointer;
+        box-shadow: 2px 2px 6px rgba(244, 211, 94, 0.6);
+    }
+
+    button:hover {
+        background-color: #ffe066;
+    }
+
+    .review-card {
+        background-color: #fff;
+        border: 2px solid #f4d35e;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .banana-rating {
+        font-size: 1.5rem;
+        margin-bottom: 8px;
+    }
+
+    .banana-rating .lit {
+        color: #ffdd57;
+    }
+
+    .banana-rating .dim {
+        color: #d3d3d3;
+    }
+
+    .complaint-box {
+        background-color: #fff3cd;
+        border: 1px dashed #f4d35e;
+        padding: 12px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+    }
+
+    .complaint-status {
+        font-weight: bold;
+        color: #a67c00;
+    }
+</style>
+
 
 
 <h1>Bananas</h1>
@@ -10,7 +133,7 @@
       <label for="vendor_id">Message a Vendor:</label>
       <select name="vendor_id" required>
           {% for vendor in vendors %}
-                <option value="{{ vendor.user_id }}">{{ vendor.name }} ({{ vendor.username }})</option>
+              <option value="{{ vendor.user_id }}">{{ vendor.name }} ({{ vendor.username }})</option>
           {% endfor %}
       </select>
       <button type="submit">Start Chat</button>
@@ -18,8 +141,9 @@
 {% endif %}
 
 
-<!-- {% if user and user.user_type == 'vendor' %}
-  <h3>Incoming Chats</h3>
+
+{% if user and user.user_type == 'vendor' %}
+  <h3>Chats from Customers</h3>
   <ul>
     {% for customer in incoming_chats %}
       <li>
@@ -32,7 +156,35 @@
       <li>No chats yet.</li>
     {% endfor %}
   </ul>
-{% endif %} -->
+{% endif %}
 
+
+<h3>Recent Reviews</h3>
+    {% if recent_reviews %}
+        <div class="recent-reviews">
+            {% for review in recent_reviews %}
+                <div class="review-card">
+                    <h4>Review for {{ review.product_name }}</h4>
+                    <p><strong>Reviewed by:</strong> {{ review.reviewer_name }}</p>
+                    <p><strong>Rating:</strong>
+                      {% for i in range(1, 6) %}
+                          {% if i <= review.rating %}
+                              <span style="font-size: 1.2em; filter: none;">🍌</span>
+                          {% else %}
+                              <span style="font-size: 1.2em; filter: grayscale(100%) brightness(60%);">🍌</span>
+                          {% endif %}
+                      {% endfor %}
+                  </p>
+                  
+                    <p><strong>Description:</strong> {{ review.description }}</p>
+                    <p><em>Reviewed on: {{ review.review_date.strftime('%Y-%m-%d %H:%M') }}</em></p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No reviews available yet.</p>
+    {% endif %}
+  
+  
 
 {% endblock %}

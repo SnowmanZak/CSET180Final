@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <style>
+        * {
+            font-family: Verdana, sans-serif;
+        }
+        body{
+            background-color: #fffbc9;
+        }
+
+        .banana-container {
+            background-color: #fffbe6;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 700px;
+            margin: 2rem auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+    
+        .banana-container h2 {
+            color: #ffcc00;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            text-shadow: 1px 1px 2px #aaa;
+        }
+    
+        .form-label {
+            font-weight: bold;
+            color: #4a3b00;
+        }
+    
+        .form-control, .form-select {
+            border: 2px solid #cccc66;
+            border-radius: 8px;
+            background-color: #ffffe0;
+            color: #333300;
+        }
+    
+        .form-control:focus, .form-select:focus {
+            outline: none;
+            border-color: #ffcc00;
+            box-shadow: 0 0 5px #ffcc00;
+        }
+    
+        .btn-warning {
+            background-color: #ffe135;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: bold;
+            color: #4a3b00;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+    
+        .btn-warning:hover {
+            background-color: #f7d600;
+        }
+
+        .back-button {
+            background-color: #ffe135;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: bold;
+            color: #4a3b00;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            text-decoration: none;
+        }
+    
+        .back-button {
+            background-color: #f7d600;
+        }
+
+        .title {
+            margin: 15px;
+        }
+
+        .description {
+            margin: 15px
+        }
+
+        .demand {
+            margin: 15px;
+        }
+
+        .image {
+            margin: 15px;
+        }
+
+    </style>
+    
+    <div class="banana-container">
+        <a href="{{ url_for('account_page') }}" class="back-button">← Back to Account Page</a>
+        <br>
+        <h2>Submit a Complaint</h2>
+        <form method="POST" action="{{ url_for('submit_complaint', variant_id=variant_id, order_id=order_id) }}">
+            <input type="hidden" name="variant_id" value="{{ variant_id }}">
+            <input type="hidden" name="order_id" value="{{ order_id }}">
+    
+            <div class="title">
+                <label class="form-label">Complaint Title</label>
+                <input type="text" name="title" class="form-control" required>
+            </div>
+    
+            <div class="description">
+                <label class="form-label" for="description">Description</label>
+                <textarea id="description" name="description" class="form-control" rows="4" required></textarea>
+            </div>
+    
+            <div class="demand">
+                <label class="form-label">Customer Demand</label>
+                <select name="demand" class="form-select" required>
+                    <option value="return">Return</option>
+                    <option value="refund">Refund</option>
+                    <option value="warranty claim">Warranty Claim</option>
+                </select>
+            </div>
+    
+            <div class="image">
+                <label class="form-label">Image URL (optional)</label>
+                <input type="url" name="image_url" class="form-control" id="image_url_input" oninput="updateImagePreview()">
+                <div id="image_preview_container" style="margin-top: 10px;">
+                    <img id="image_preview" src="" alt="Image Preview" style="max-width: 100%; display: none; border: 1px solid #ccc; padding: 5px; border-radius: 6px;">
+                </div>
+            </div>
+    
+            <button type="submit" class="btn btn-warning">Submit Complaint 🍌</button>
+        </form>
+    </div>
+
+    
+    <script>
+        function updateImagePreview() {
+            const input = document.getElementById('image_url_input');
+            const img = document.getElementById('image_preview');
+            const container = document.getElementById('image_preview_container');
+    
+            if (input.value.trim() !== '') {
+                img.src = input.value.trim();
+                img.style.display = 'block';
+            } else {
+                img.style.display = 'none';
+            }
+        }
+    </script>
+    
+</body>
+</html>
+
+
+    
+
+
+
+
+    

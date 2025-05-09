@@ -1,32 +1,105 @@
-{%extends 'base.html'%}
+{% extends 'base.html' %}
+
+{% block title %}Chat{% endblock %}
 
 {% block body %}
+<style>
+    body {
+        background-color: #fffbea;
+    }
+    .chat-container {
+        max-width: 800px;
+        margin: auto;
+        background-color: #fff8dc;
+        border: 2px dashed #f4d35e;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(244, 211, 94, 0.4);
+    }
+    .chat-box {
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 10px;
+        background-color: #fffdf4;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .chat-message {
+        max-width: 70%;
+        margin-bottom: 15px;
+        padding: 10px 15px;
+        border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        font-size: 1rem;
+    }
+    .from-user {
+        background-color: #f4d35e;
+        color: #000;
+        margin-left: auto;
+        text-align: right;
+    }
+    .from-other {
+        background-color: #fdfdfd;
+        color: #333;
+        margin-right: auto;
+        text-align: left;
+    }
+    .chat-form textarea {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #f4d35e;
+        border-radius: 8px;
+        resize: vertical;
+    }
+    .chat-form button {
+        background-color: #f4d35e;
+        border: none;
+        color: #000;
+        font-weight: bold;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        box-shadow: 2px 2px 8px rgba(244, 211, 94, 0.6);
+    }
+    .chat-form button:hover {
+        background-color: #ffe066;
+    }
+    img.chat-image {
+        max-width: 200px;
+        border-radius: 8px;
+        margin-top: 5px;
+    }
+    small {
+        font-size: 0.75rem;
+        color: #666;
+    }
+</style>
 
+<div class="container mt-4">
+    <h2 class="text-warning mb-4 text-center">🍌 Banana Chat</h2>
 
-<h2>Chat</h2>
-
-<div class="chat-box">
-    {% for msg in messages %}
-        <div class="chat-message">
-            <p><strong>{{ 'You' if msg.sender_id == user.user_id else 'Vendor' }}:</strong></p>
-            
-            {% if msg.message %}
-                {% if msg.message.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')) and msg.message.startswith('http') %}
-                    <img src="{{ msg.message }}" alt="Pasted Image" style="max-width: 300px;"><br>
-                {% else %}
-                    <p>{{ msg.message }}</p>
-                {% endif %}
-            {% endif %}
-            
-            <small><em>{{ msg.sent_at }}</em></small>
+    <div class="chat-container">
+        <div class="chat-box">
+            {% for msg in messages %}
+                <div class="chat-message {% if msg.sender_id == user.user_id %}from-user{% else %}from-other{% endif %}">
+                    <p><strong>{{ 'You' if msg.sender_id == user.user_id else 'Them' }}:</strong></p>
+                    {% if msg.message %}
+                        {% if msg.message.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')) and msg.message.startswith('http') %}
+                            <img src="{{ msg.message }}" class="chat-image" alt="Image"><br>
+                        {% else %}
+                            <p>{{ msg.message }}</p>
+                        {% endif %}
+                    {% endif %}
+                    <small>{{ msg.sent_at }}</small>
+                </div>
+            {% endfor %}
         </div>
-    {% endfor %}
+
+        <form method="post" action="{{ url_for('chat') }}" class="chat-form">
+            <input type="hidden" name="receiver_id" value="{{ other_id }}">
+            <textarea name="message" rows="3" placeholder="🍌 Type your message..." required></textarea><br>
+            <button type="submit">Send 🍌</button>
+        </form>
+    </div>
 </div>
-
-<form method="post" action="{{ url_for('chat') }}">
-    <input type="hidden" name="vendor_id" value="{{ vendor_id }}">
-    <textarea name="message" placeholder="Type your message..." required></textarea><br>
-    <button type="submit">Send</button>
-</form>
-
 {% endblock %}

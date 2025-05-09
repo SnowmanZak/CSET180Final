@@ -4,7 +4,6 @@
 <link rel="stylesheet" href="../static/styles/styles.css">
 <style>
 
-<style>
     body {
         font-family: 'Comic Sans MS', 'Arial', sans-serif;
         background-color: #fffbea;
@@ -145,6 +144,15 @@
         from { opacity: 0; transform: translateY(-20px); }
         to { opacity: 1; transform: translateY(0); }
     }
+
+    #category {
+    margin-top: 5px;
+    border: 2px solid #ffe066;
+    background-color: #fff9d6;
+    padding: 8px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    }
 </style>
 
     
@@ -162,9 +170,22 @@
         <label for="warranty-period">Warranty Period: </label>
         <input type="text" id="warranty-period" name="warranty-period" required><br><br>
 
-        <label for="category">Category: </label>
-        <input type="text" id="category" name="category" required><br><br>
-
+        <label for="category">Category: </label><br>
+        <select id="category" name="category" required>
+            <option value="">-- Select a Category --</option>
+            <option value="automotive">Automotive</option>
+            <option value="beauty-personal-care">Beauty & Personal Care</option>
+            <option value="books">Books</option>
+            <option value="clothes">Clothes</option>
+            <option value="electronics">Electronics</option>
+            <option value="food">Food</option>
+            <option value="home-kitchen">Home & Kitchen</option>
+            <option value="tools">Tools</option>
+            <option value="toys-games">Toys & Games</option>
+            <option value="video-games">Video Games</option>            
+        </select>
+        <br><br>
+        
         {% if user_type == 'admin' %}
         <label for="vendor_id">Select Vendor:</label>
         <select name="vendor_id" id="vendor_id" required>

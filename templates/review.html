@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Submit Your Review{% endblock %}
+
+{% block body %}
+    <style>
+        .review-container {
+            background-color: #fffbe6;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 600px;
+            margin: 2rem auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .review-container h2 {
+            color: #ffcc00;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            text-shadow: 1px 1px 2px #aaa;
+        }
+
+        .review-form {
+            text-align: left;
+            background-color: #ffffe0;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            border: 2px solid #cccc66;
+            margin-bottom: 2rem;
+        }
+
+        .review-form label {
+            font-weight: bold;
+            color: #5c4400;
+        }
+
+        .review-form input,
+        .review-form textarea,
+        .review-form select {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 2px solid #ffe066;
+            background-color: #fff9d6;
+        }
+
+        .review-form textarea {
+            resize: vertical;
+            height: 120px;
+        }
+
+        .review-button {
+            background-color: #f4c542;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #5c4400;
+            transition: background-color 0.2s ease;
+        }
+
+        .review-button:hover {
+            background-color: #ffd93b;
+        }
+
+        .review-image-preview {
+            margin-top: 10px;
+            max-width: 100%;
+            max-height: 150px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+    </style>
+
+    <div class="review-container">
+        <h2>Submit Your Review for Product</h2>
+        
+        <form action="{{ url_for('submit_review', product_id=product_id) }}" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="product_id" value="{{ product_id }}">
+        
+            <div class="review-form">
+                <label for="rating">Rating (1 to 5):</label>
+                <select name="rating" required>
+                    <option value="1">1 - Poor 🍌</option>
+                    <option value="2">2 - Fair 🍌🍌</option>
+                    <option value="3">3 - Good 🍌🍌🍌</option>
+                    <option value="4">4 - Very Good 🍌🍌🍌🍌</option>
+                    <option value="5">5 - Excellent 🍌🍌🍌🍌🍌</option>
+                </select>
+        
+                <label for="description">Description:</label>
+                <textarea name="description" required placeholder="Write your review here..."></textarea>
+        
+                <label for="image_url">Image URL (Optional):</label>
+                <input type="url" name="image_url" id="image_url_input" placeholder="https://example.com/image.jpg">
+        
+                <img id="image_preview" class="review-image-preview" style="display:none;" alt="Image Preview">
+        
+                <button type="submit" class="review-button">Submit Review</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const input = document.getElementById('image_url_input');
+        const preview = document.getElementById('image_preview');
+    
+        input.addEventListener('input', () => {
+            const url = input.value.trim();
+            if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+                preview.src = url;
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+    </script>
+    
+{% endblock %}

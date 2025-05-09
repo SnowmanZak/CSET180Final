@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Complaints{% endblock %}
+
+{% block body %}
+
+<style>
+    body {
+        background-color: #fffbc9;
+        color: #5c4400;
+    }
+    
+    .card {
+        background-color: #fffbe6;
+        border: 1px solid #5c4400;
+        border-radius: 12px;
+        padding-bottom: 10px;
+        margin-bottom: 25px;
+    }
+
+    .card-title {
+        color: #5c4400;
+    }
+
+    .form-select,
+    .form-control {
+        background-color: #fffbc9;
+        color: #5c4400;
+        border: 1px solid #5c4400;
+        border-radius: 4px;
+        margin-left: 10px;
+    }
+
+    .form-select option {
+        background-color: #fffbc9;
+        color: #5c4400;
+    }
+
+    .btn-success {
+        background-color: #fce76c;
+        color: #5c4400;
+        border: none;
+        border-radius: 4px;
+    }
+
+    .btn-success:hover {
+        background-color: #ffe135;
+    }
+
+    img.img-fluid {
+        border-radius: 8px;
+    }
+
+    .text-warning {
+        color: #5c4400 !important;
+    }
+</style>
+
+
+<div class="container mt-4">
+    <h2 class="text-warning mb-4">Manage Product Complaints</h2>
+
+    {% if complaints %}
+        {% for complaint in complaints %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title">{{ complaint.title }} ({{ complaint.demand | capitalize }})</h3>
+                    <p><strong>Product:</strong> {{ complaint.product_name }}</p>
+                    <p><strong>Customer:</strong> {{ complaint.customer_name }}</p>
+                    <p><strong>Date:</strong> {{ complaint.complaint_date.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <p><strong>Description:</strong> {{ complaint.description }}</p>
+                    
+                    {% if complaint.image_url %}
+                        <img src="{{ complaint.image_url }}" alt="Complaint Image" class="img-fluid mt-2 mb-2" style="max-height: 200px;">
+                    {% endif %}
+
+                    <form method="POST" class="d-flex align-items-center gap-3 mt-3">
+                        <input type="hidden" name="complaint_id" value="{{ complaint.complaint_id }}">
+                        <select name="new_status" class="form-select w-auto">
+                            <option disabled>Status</option>
+                            <option value="pending" {% if complaint.complaint_status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="rejected" {% if complaint.complaint_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                            <option value="confirmed" {% if complaint.complaint_status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                            <option value="processing" {% if complaint.complaint_status == 'processing' %}selected{% endif %}>Processing</option>
+                            <option value="complete" {% if complaint.complaint_status == 'complete' %}selected{% endif %}>Complete</option>
+                        </select>
+                        {% if complaint.complaint_status in ['rejected', 'complete'] %}
+
+                        {% else %}
+                        <button type="submit" class="btn btn-success">Update</button>
+                        {% endif %}
+
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No complaints found.</p>
+    {% endif %}
+</div>
+{% endblock %}

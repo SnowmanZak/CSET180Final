@@ -4,6 +4,7 @@ import bcrypt
 import math
 import traceback
 import colorsys
+from urllib.parse import urlencode
 
 app = Flask(__name__)
 
@@ -27,22 +28,41 @@ def home():
             result = conn.execute(text("SELECT user_id, name, username FROM users WHERE user_type = 'vendor'"))
             vendors = [dict(row._mapping) for row in result]
     
-    # if user and user['user_type'] == 'vendor':
-    #     with engine.begin() as conn:
-    #         result = conn.execute(text("""
-    #             SELECT u.user_id, u.name, u.username, MAX(c.sent_at) as last_sent
-    #             FROM chat c
-    #             JOIN users u ON c.sender_id = u.user_id
-    #             WHERE c.receiver_id = :user_id
-    #             GROUP BY u.user_id, u.name, u.username
-    #             ORDER BY last_sent DESC
-    #         """), {'user_id': user['user_id']})
-    
-    #     incoming_chats = [dict(row) for row in result]
-    # else:
-    #     incoming_chats = []
+    if user and user['user_type'] == 'vendor':
+        with engine.begin() as conn:
+            result = conn.execute(text("""
+                SELECT 
+                    u.user_id, u.name, u.username, MAX(c.sent_at) AS last_sent
+                FROM chat c
+                JOIN users u ON c.sender_id = u.user_id
+                WHERE c.receiver_id = :user_id
+                GROUP BY u.user_id, u.name, u.username
+                ORDER BY last_sent DESC
+            """), {'user_id': user['user_id']})
+            incoming_chats = [dict(row._mapping) for row in result]
+    else:
+        incoming_chats = []
 
-    return render_template('index.html', logged_in=logged_in, user=user, vendors=vendors)
+
+
+    with engine.connect() as conn:
+        recent_reviews = conn.execute(text("""
+            SELECT 
+                r.review_id,
+                r.rating,
+                r.description,
+                r.review_date,
+                p.title AS product_name,
+                u.username AS reviewer_name
+            FROM reviews r
+            JOIN products p ON r.product_id = p.product_id
+            JOIN users u ON r.user_id = u.user_id
+            ORDER BY r.review_date DESC
+            LIMIT 3
+        """)).mappings().all()
+    
+
+    return render_template('index.html', logged_in=logged_in, user=user, vendors=vendors, recent_reviews=recent_reviews, incoming_chats=incoming_chats)
 
 
 
@@ -137,22 +157,158 @@ def log_out():
 
 
 
-@app.route('/account', methods=['GET'])
-def account():
+@app.route('/account')
+def account_page():
     user = get_logged_in_user()
-
     if not user:
         return redirect(url_for('login'))
 
-    with engine.begin() as conn:
-        result = conn.execute(
-            text('SELECT user_id, name, email, username FROM users WHERE logged_in = 1 AND user_id = :user_id'),
-            {'user_id': user['user_id']}
-        )
-        account_details = result.mappings().first()
+    account_details = user
 
-    return render_template('account.html', user=user, account_details=account_details)
+    with engine.connect() as conn:
+        orders = conn.execute(text("""
+            SELECT 
+                o.order_id,
+                o.order_date,
+                o.status,
+                o.total_price
+            FROM orders o
+            WHERE o.user_id = :uid
+            ORDER BY o.order_date DESC
+        """), {'uid': user['user_id']}).mappings().all()
 
+        order_details = {}
+        for order in orders:
+            items = conn.execute(text("""
+                SELECT 
+                    oi.variant_id,
+                    oi.order_id,
+                    p.product_id,
+                    p.title AS product_name,
+                    c.color,
+                    s.size,
+                    oi.quantity,
+                    oi.price
+                FROM orderitems oi
+                JOIN productvariants v ON oi.variant_id = v.variant_id
+                JOIN products p ON v.product_id = p.product_id
+                JOIN availablecolors c ON v.color_id = c.color_id
+                JOIN availablesizes s ON v.size_id = s.size_id
+                WHERE oi.order_id = :oid
+            """), {'oid': order['order_id']}).mappings().all()
+            order_details[order['order_id']] = items
+
+    return render_template(
+        'account.html',
+        account_details=account_details,
+        orders=orders,
+        order_details=order_details
+    )
+
+
+
+@app.route('/submit_review/<int:product_id>', methods=['GET', 'POST'])
+def submit_review(product_id):
+    if request.method == 'POST':
+        product_id = request.form.get('product_id', product_id) 
+
+        rating = request.form.get('rating')
+        description = request.form.get('description')
+        image_url = request.form.get('image_url')  
+        user = get_logged_in_user()
+
+        if not user:
+            return redirect(url_for('login'))
+
+        if not product_id:
+            return redirect(url_for('home'))
+
+        with engine.connect() as conn:
+            conn.execute(text("""
+                INSERT INTO reviews (product_id, user_id, rating, description, image_url, review_date)
+                VALUES (:product_id, :user_id, :rating, :description, :image_url, NOW())
+            """), {
+                'product_id': product_id,
+                'user_id': user['user_id'],
+                'rating': rating,
+                'description': description,
+                'image_url': image_url or None  
+            })
+            conn.commit()
+
+        return redirect(url_for('home'))  
+
+    return render_template('review.html', product_id=product_id)  
+
+
+
+@app.route('/submit_complaint/<int:variant_id>/<int:order_id>', methods=['GET', 'POST'])
+def submit_complaint(variant_id, order_id):
+    user = get_logged_in_user()
+    if not user:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        title = request.form.get('title')
+        description = request.form.get('description')
+        demand = request.form.get('demand')
+        image_url = request.form.get('image_url') or None
+
+        with engine.connect() as conn:
+            conn.execute(text("""
+                INSERT INTO complaints (user_id, order_id, variant_id, title, description, demand, image_url)
+                VALUES (:user_id, :order_id, :variant_id, :title, :description, :demand, :image_url)
+            """), {
+                'user_id': user['user_id'],
+                'order_id': order_id,
+                'variant_id': variant_id,
+                'title': title,
+                'description': description,
+                'demand': demand,
+                'image_url': image_url
+            })
+            conn.commit()
+
+        return redirect(url_for('home'))
+
+    return render_template('submit_complaint.html', variant_id=variant_id, order_id=order_id)
+
+
+@app.route('/manage_returns', methods=['GET', 'POST'])
+def manage_returns():
+    if request.method == 'POST':
+        complaint_id = request.form.get('complaint_id')
+        new_status = request.form.get('new_status')
+
+        conn.execute(text("""
+            UPDATE complaints 
+            SET complaint_status = :status 
+            WHERE complaint_id = :cid
+        """), {'status': new_status, 'cid': complaint_id})
+        conn.commit()
+        return redirect(url_for('manage_returns'))
+
+    complaints = conn.execute(text("""
+        SELECT 
+            c.complaint_id,
+            c.title,
+            c.description,
+            c.demand,
+            c.complaint_status,
+            c.complaint_date,
+            c.image_url,
+            u.username AS customer_name,
+            p.title AS product_name,
+            c.variant_id,
+            c.order_id
+        FROM complaints c
+        JOIN users u ON c.user_id = u.user_id
+        JOIN productvariants v ON c.variant_id = v.variant_id
+        JOIN products p ON v.product_id = p.product_id
+        ORDER BY c.complaint_date DESC
+    """)).mappings().all()
+
+    return render_template('manageReturns.html', complaints=complaints)
 
 
 
@@ -198,7 +354,6 @@ def product_create():
             return render_template('productCreate.html', step_one_creation_submit=True, user_type=user['user_type'], vendors=vendors)
 
         except Exception as e:
-            print("Error creating product:", e)
             return render_template('productCreate.html', step_one_creation_submit=False, user_type=user['user_type'], vendors=vendors)
 
     return render_template('productCreate.html', user_type=user['user_type'], vendors=vendors)
@@ -265,7 +420,6 @@ def submit_color():
         return render_template('productCreate.html', step_two_creation_submit=True, step_one_creation_submit=False)
 
     except Exception as e:
-        print(f'Color insert failed: {e}')
         return render_template('productCreate.html', step_two_creation_submit=False, step_one_creation_submit=True)
 
 
@@ -277,8 +431,7 @@ def size_submit():
     if not product_id:
         return "Error: Product ID not found."
 
-    selected_sizes = [size for size in ['xsmall', 'small', 'medium', 'large', 'xlarge'] if request.form.get(size)]
-    print(f"Selected Sizes: {selected_sizes}")  
+    selected_sizes = [size for size in ['xsmall', 'small', 'medium', 'large', 'xlarge'] if request.form.get(size)] 
 
     try:
         with engine.begin() as conn:
@@ -292,7 +445,6 @@ def size_submit():
         return render_template('productCreate.html', step_three_creation_submit=True, step_two_creation_submit=False)
 
     except Exception as e:
-        print(f"Error inserting sizes: {e}")
         return render_template('productCreate.html', step_three_creation_submit=True, step_two_creation_submit=False)
 
 
@@ -366,7 +518,6 @@ def finalize_images():
 
 
     product_id = get_product_id()  
-    print(f"Finalizing images for product ID {product_id}...")
 
 
     try:
@@ -379,7 +530,6 @@ def finalize_images():
             """), {'pid': product_id})
 
             rows = result.fetchall()
-            print(f"Rows fetched: {rows}")  
 
             if not rows:
                 print(f"No color-size combinations found for product ID {product_id}.")
@@ -390,7 +540,6 @@ def finalize_images():
 
                 for row in rows:
                     color_id, size_id = row
-                    print(f"Checking: color_id={color_id}, size_id={size_id}")
 
                     exists = conn.execute(text("""
                         SELECT 1 FROM productvariants
@@ -407,10 +556,8 @@ def finalize_images():
                                 :pid, :cid, :sid, 0, 0.00, NULL, NULL
                             )
                         """), {'pid': product_id, 'cid': color_id, 'sid': size_id})
-                        print(f"Inserted variant for {color_id}, {size_id}")
                         inserted_count += 1
 
-                print(f"{inserted_count} new variants inserted for product {product_id}.")
 
     except Exception as e:
         print("Error during variant insertion:")
@@ -426,54 +573,114 @@ def chat():
     if not user:
         return redirect(url_for('home'))
 
-    if request.method == 'GET':
-        other_id = request.args.get('vendor_id') if user['user_type'] == 'customer' else request.args.get('customer_id')
-        if not other_id:
-            return redirect(url_for('home'))
-
-        with engine.begin() as conn:
-            messages = conn.execute(text("""
-                SELECT * FROM chat
-                WHERE (sender_id = :user_id AND receiver_id = :other_id)
-                   OR (sender_id = :other_id AND receiver_id = :user_id)
-                ORDER BY sent_at ASC
-            """), {'user_id': user['user_id'], 'other_id': other_id}).fetchall()
-
-        return render_template('chat.html', messages=messages, user=user, other_id=other_id)
-
-    elif request.method == 'POST':
+    if request.method == 'POST':
         message = request.form.get('message')
         receiver_id = request.form.get('receiver_id')
-
         if message and receiver_id:
             with engine.begin() as conn:
                 conn.execute(text("""
                     INSERT INTO chat (sender_id, receiver_id, message)
                     VALUES (:sender_id, :receiver_id, :message)
-                """), {'sender_id': user['user_id'], 'receiver_id': receiver_id, 'message': message})
+                """), {
+                    'sender_id': user['user_id'],
+                    'receiver_id': receiver_id,
+                    'message': message
+                })
 
         return redirect(url_for('chat', **(
             {'vendor_id': receiver_id} if user['user_type'] == 'customer' else {'customer_id': receiver_id}
         )))
 
+    if user['user_type'] == 'customer':
+        other_id = request.args.get('vendor_id')
+    else:
+        other_id = request.args.get('customer_id')
+
+    if not other_id:
+        return redirect(url_for('home'))
+
+    with engine.begin() as conn:
+        messages = conn.execute(text("""
+            SELECT * FROM chat
+            WHERE (sender_id = :user_id AND receiver_id = :other_id)
+               OR (sender_id = :other_id AND receiver_id = :user_id)
+            ORDER BY sent_at ASC
+        """), {'user_id': user['user_id'], 'other_id': other_id}).fetchall()
+
+    return render_template('chat.html', messages=messages, user=user, other_id=other_id)
 
 
-@app.route('/view-products/')
-@app.route('/view-products/<search>')
-def view_products(search=None):
+
+
+@app.route('/view-products')
+def view_products():
+    search = request.args.get('search')
+    color = request.args.getlist('color')
+    size = request.args.getlist('size')
+    category = request.args.getlist('category')
+    stock = request.args.getlist('stock')
+    filter = request.args.get('filter')
+
     
-    print(f'This is the results: {search}')
-    
+    print('---------------------')
+    print(f'This is the color {color}')
+    print(f'This is the size {size}')
+    print(f'This is the category {category}')
+    print(f'This is the stock {stock}')
+    print(f'This is the search {search}')
+    print(f'This is the filter {filter}')
+    print('---------------------')
+        
     with engine.connect() as conn:
         if search == 'blank':
             return render_template('products.html', products='none')
-        elif search:
+        
+        if search:
             products = conn.execute(text("""
                 SELECT p.product_id, p.title, p.description, p.warranty_period, u.name AS vendor_name
                 FROM products p
                 JOIN users u ON p.vendor_id = u.user_id
                 WHERE LOWER(p.title) = :search
             """), {'search': search.lower()}).fetchall()
+        elif filter:
+            if color != []:
+                color_matches_id = conn.execute(text("""
+                    SELECT product_id
+                    FROM availablecolors
+                    WHERE color_group IN :colors
+                """), {'colors': tuple(color)}).fetchall()
+            
+            if size != []:
+                size_matches_id = conn.execute(text("""
+                    SELECT product_id
+                    FROM availablesizes
+                    WHERE size IN :size
+                """), {'size': tuple(size)}).fetchall()
+            
+            if category != []:
+                category_matches_id = conn.execute(text("""
+                    SELECT product_id
+                    FROM products
+                    WHERE category IN :category
+                """), {'category': tuple(category)}).fetchall()
+                
+                print(f'These are the categories to filter for {category}')
+                print(f'These are the categorys matched ids {category_matches_id}')
+            
+            
+            products = conn.execute(text("""
+                SELECT p.product_id, p.title, p.description, p.warranty_period, u.name AS vendor_name
+                FROM products p
+                JOIN users u ON p.vendor_id = u.user_id
+                WHERE p.product_id IN :matched_color_id
+                AND p.product_id IN :matched_category_id
+            """),{
+                    'matched_color_id': tuple(row[0] for row in color_matches_id),
+                    'matched_category_id': tuple(row[0] for row in category_matches_id),
+                }).fetchall()
+                      
+
+
         else:
             products = conn.execute(text("""
                 SELECT p.product_id, p.title, p.description, p.warranty_period, u.name AS vendor_name
@@ -520,13 +727,18 @@ def view_products(search=None):
 def search_product():
     searched_product = request.form.get('search-bar')
     
-    print(f'raw search {searched_product}')
-    
     if searched_product is None or searched_product == '':
         searched_product = 'blank'
 
     return redirect(url_for('view_products', search=searched_product))
 
+
+@app.route('/filter-submit', methods=['POST', 'GET'])
+def filter_submit():
+    form_data = request.form.to_dict(flat=False) # 'flat=false' returns all values as a list 
+    query_string = urlencode(form_data, doseq=True) # turns a dict into a URL-encoded query string allowing it to be sent as parm and recieve all data
+                 
+    return redirect(f"/view-products?{query_string}&filter=True")
 
 
 from datetime import datetime
@@ -750,7 +962,6 @@ def delete_product(product_id):
         return redirect('/manage-products')
 
     except Exception as e:
-        print(f"Error deleting product {product_id}: {e}")
         return redirect('/manage-products')
 
 
@@ -851,6 +1062,258 @@ def remove_from_cart(cart_id):
 
 
 
+@app.route('/create-order')
+def create_order_page():
+    user = get_logged_in_user()
+    if not user:
+        return redirect('/login')
+
+    with engine.connect() as conn:
+        cart_items = conn.execute(text("""
+            SELECT
+                c.cart_id,
+                p.title AS product_name,
+                c.quantity,
+                CASE
+                    WHEN v.discount_price IS NOT NULL AND v.discount_price > 0 THEN (v.price - v.discount_price)
+                    ELSE v.price
+                END AS price,
+                CASE
+                    WHEN v.discount_price IS NOT NULL AND v.discount_price > 0 THEN (c.quantity * (v.price - v.discount_price))
+                    ELSE (c.quantity * v.price)
+                END AS subtotal,
+                co.color,
+                s.size
+            FROM cart c
+            JOIN productvariants v ON c.variant_id = v.variant_id
+            JOIN products p ON v.product_id = p.product_id
+            JOIN availablecolors co ON v.color_id = co.color_id
+            JOIN availablesizes s ON v.size_id = s.size_id
+            WHERE c.user_id = :uid
+        """), {'uid': user['user_id']}).mappings().all()
+
+        total = sum(item['subtotal'] for item in cart_items)
+
+    return render_template('createOrder.html', cart_items=cart_items, total=total)
+
+
+
+
+
+@app.route('/checkout', methods=['POST'])
+def checkout():
+    user = get_logged_in_user()
+    if not user:
+        return redirect('/login')
+
+    with engine.begin() as conn:
+        cart_items = conn.execute(text("""
+            SELECT 
+                c.variant_id, 
+                c.quantity,
+                CASE
+                    WHEN v.discount_price IS NOT NULL AND v.discount_price > 0 THEN (v.price - v.discount_price)
+                    ELSE v.price
+                END AS price
+            FROM cart c
+            JOIN productvariants v ON c.variant_id = v.variant_id
+            WHERE c.user_id = :uid
+            """), {'uid': user['user_id']}).mappings().all()
+
+        if not cart_items:
+            return "Cart is empty", 400
+
+        total_price = sum(item['price'] * item['quantity'] for item in cart_items)
+
+        result = conn.execute(text("""
+            INSERT INTO orders (user_id, total_price)
+            VALUES (:uid, :total)
+        """), {'uid': user['user_id'], 'total': total_price})
+
+        order_id = conn.execute(text("SELECT LAST_INSERT_ID()")).scalar()
+
+        for item in cart_items:
+            conn.execute(text("""
+                INSERT INTO orderitems (order_id, variant_id, quantity, price)
+                VALUES (:oid, :vid, :qty, :price)
+            """), {
+                'oid': order_id,
+                'vid': item['variant_id'],
+                'qty': item['quantity'],
+                'price': item['price']
+            })
+
+        conn.execute(text("DELETE FROM cart WHERE user_id = :uid"), {'uid': user['user_id']})
+
+    return redirect('/orders')
+
+
+
+@app.route('/orders')
+def view_orders():
+    user = get_logged_in_user()
+    if not user:
+        return redirect(url_for('login'))
+
+    with engine.connect() as conn:
+        orders = conn.execute(text("""
+            SELECT 
+                o.order_id,
+                o.order_date,
+                o.status,
+                o.total_price
+            FROM orders o
+            WHERE o.user_id = :uid
+            ORDER BY o.order_date DESC
+        """), {'uid': user['user_id']}).mappings().all()
+
+        order_details = {}
+        for order in orders:
+            items = conn.execute(text("""
+                SELECT 
+                    p.title AS product_name,
+                    c.color,
+                    s.size,
+                    oi.quantity,
+                    oi.price
+                FROM orderitems oi
+                JOIN productvariants v ON oi.variant_id = v.variant_id
+                JOIN products p ON v.product_id = p.product_id
+                JOIN availablecolors c ON v.color_id = c.color_id
+                JOIN availablesizes s ON v.size_id = s.size_id
+                WHERE oi.order_id = :oid
+            """), {'oid': order['order_id']}).mappings().all()
+            order_details[order['order_id']] = items
+
+    return render_template('index.html', orders=orders, order_details=order_details)
+
+
+
+@app.route('/vendor/orders')
+def vendor_orders():
+    logged_in_user = get_logged_in_user()  
+    
+    if not logged_in_user:
+        return redirect(url_for('login')) 
+    
+    logged_in_vendor_id = logged_in_user.get('user_id') 
+    
+    with engine.connect() as conn:
+        vendor_products = conn.execute(text("""
+            SELECT p.product_id
+            FROM products p
+            WHERE p.vendor_id = :vendor_id
+        """), {'vendor_id': logged_in_vendor_id}).fetchall()  
+
+        if not vendor_products:
+            return render_template('view_orders.html', orders=[])
+        
+        vendor_product_ids = [row[0] for row in vendor_products]  
+        
+        orders = conn.execute(text("""
+            SELECT o.order_id, o.user_id, o.status, o.total_price, o.order_date
+            FROM orders o
+            JOIN orderitems oi ON o.order_id = oi.order_id
+            JOIN productvariants pv ON oi.variant_id = pv.variant_id
+            WHERE pv.product_id IN :product_ids
+            GROUP BY o.order_id
+        """), {'product_ids': tuple(vendor_product_ids)}).fetchall()  
+
+    return render_template('view_orders.html', orders=orders)
+
+
+
+
+
+@app.route('/vendor/order/<int:order_id>')
+def vendor_view_order(order_id):
+    logged_in_user = get_logged_in_user()
+
+    if logged_in_user and logged_in_user['user_type'] == 'vendor':
+        logged_in_vendor_id = logged_in_user['user_id']  
+    else:
+        return "You are not a vendor or not logged in", 403
+
+    with engine.connect() as conn:
+        vendor_products = conn.execute(text("""
+            SELECT p.product_id
+            FROM products p
+            WHERE p.vendor_id = :vendor_id
+        """), {'vendor_id': logged_in_vendor_id}).mappings().fetchall()  
+
+        vendor_product_ids = [row['product_id'] for row in vendor_products]  
+
+        order = conn.execute(text("""
+            SELECT * FROM orders WHERE order_id = :oid
+        """), {'oid': order_id}).mappings().first()  
+
+        items = conn.execute(text("""
+            SELECT oi.quantity, oi.price, p.title, co.color, s.size
+            FROM orderitems oi
+            JOIN productvariants v ON oi.variant_id = v.variant_id
+            JOIN products p ON v.product_id = p.product_id
+            JOIN availablecolors co ON v.color_id = co.color_id
+            JOIN availablesizes s ON v.size_id = s.size_id
+            WHERE oi.order_id = :oid AND p.product_id IN :product_ids
+        """), {'oid': order_id, 'product_ids': tuple(vendor_product_ids)}).mappings().fetchall()  
+
+    return render_template('vendor_order_detail.html', order=order, items=items)
+
+
+
+@app.route('/vendor/confirm-order/<int:order_id>', methods=['POST'])
+def confirm_order(order_id):
+    logged_in_user = get_logged_in_user()  
+    logged_in_vendor_id = logged_in_user.get('user_id')
+
+    with engine.begin() as conn:
+        order_items = conn.execute(text("""
+            SELECT oi.variant_id, oi.quantity, p.vendor_id 
+            FROM orderitems oi
+            JOIN productvariants pv ON oi.variant_id = pv.variant_id
+            JOIN products p ON pv.product_id = p.product_id
+            WHERE oi.order_id = :oid
+        """), {'oid': order_id}).mappings().all()
+
+        if not order_items or order_items[0]['vendor_id'] != logged_in_vendor_id:
+            return redirect(url_for('vendor_orders'))  
+
+        for item in order_items:
+            result = conn.execute(text("""
+                UPDATE productvariants
+                SET inventory_count = inventory_count - :qty
+                WHERE variant_id = :vid AND inventory_count >= :qty
+            """), {'vid': item['variant_id'], 'qty': item['quantity']})
+
+            if result.rowcount == 0:
+                print(f"Not enough stock for variant {item['variant_id']}.")
+
+        conn.execute(text("""
+            UPDATE orders
+            SET status = 'confirmed'
+            WHERE order_id = :oid
+        """), {'oid': order_id})
+
+    return redirect(url_for('vendor_orders')) 
+
+
+
+@app.route('/update_order_status', methods=['POST'])
+def update_order_status():
+    order_id = request.form['order_id']
+    new_status = request.form['status']
+
+
+    with engine.begin() as conn:
+        conn.execute(text("""
+            UPDATE orders
+            SET status = :status
+            WHERE order_id = :order_id
+        """), {"status": new_status, "order_id": order_id})
+
+    return redirect(url_for('vendor_orders'))
+
+ 
 
 
 

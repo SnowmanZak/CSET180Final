@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Order</title>
+</head>
+<body>
+    <style>
+        .content-box {
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+        }
+
+        .vendor-order-container {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            border: 2px solid black;
+            border-radius: 20px;
+            background-color: #FFFBE6;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            max-width: 800px;
+        }
+
+        h2, h3 {
+            color: #333;
+        }
+
+        .order-info, .item-list {
+            margin-bottom: 1.5rem;
+        }
+
+        .item-list li {
+            background: #f9f9f9;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 1px solid #ccc;
+        }
+
+        .confirm-btn {
+            background-color: #f4c542; 
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 1rem;
+            width: 100%;
+        }
+
+        .confirm-btn:hover {
+            background-color: #ffd93b; 
+        }
+
+        .back-btn {
+            background-color: #f4c542; 
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 75%;
+            align-self: center;
+            text-align: center;
+            margin-bottom: 1rem;
+            text-decoration: none; 
+            display: inline-block;
+        }
+
+        .back-btn:hover {
+            background-color: #ffd93b; 
+        }
+
+        
+        form {
+            display: flex;
+            justify-content: center;
+        }
+
+        .order-info p {
+            font-size: 1.1rem;
+            color: #555;
+        }
+
+        /* Responsive Adjustment */
+        @media (max-width: 768px) {
+            .vendor-order-container {
+                max-width: 100%;
+                padding: 10px;
+            }
+        }
+    </style>
+
+<div class="vendor-order-container">
+    <h2>Vendor Order View</h2>
+
+    <div class="order-info">
+        <p><strong>Order ID:</strong> {{ order.order_id }}</p>
+        <p><strong>Date:</strong> {{ order.order_date }}</p>
+        <p><strong>Status:</strong> {{ order.status }}</p>
+        <p><strong>Total:</strong> ${{ '%.2f' | format(order.total_price) }}</p>
+    </div>
+
+    <div class="item-list">
+        <h3>Items</h3>
+        <ul>
+            {% if items %}
+                {% for item in items %}
+                <li>
+                    <strong>{{ item.title }}</strong><br>
+                    Color: {{ item.color }}<br>
+                    Size: {{ item.size }}<br>
+                    Quantity: {{ item.quantity }}<br>
+                    Price: ${{ '%.2f' | format(item.price) }}<br>
+                    Subtotal: ${{ '%.2f' | format(item.quantity * item.price) }}
+                </li>
+                {% endfor %}
+            {% else %}
+                <li>No items from your store in this order.</li>
+            {% endif %}
+        </ul>
+    </div>
+
+    {% if order.status == 'pending' %}
+    <form action="{{ url_for('confirm_order', order_id=order.order_id) }}" method="POST">
+        <button type="submit" class="confirm-btn">Confirm Order</button>
+    </form>    
+    {% endif %}
+</div>
+
+</body>
+</html>
+    
