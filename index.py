@@ -751,6 +751,7 @@ from datetime import datetime
 @app.route('/product/<int:product_id>', methods=['GET', 'POST'])
 def view_product(product_id):
     with engine.connect() as conn:
+        # Get product and vendor info
         product = conn.execute(text("""
             SELECT p.*, u.username AS vendor
             FROM products p
@@ -761,6 +762,7 @@ def view_product(product_id):
         if not product:
             return "Product not found", 404
 
+        # Get all variants
         variants = conn.execute(text("""
             SELECT v.variant_id, c.color, s.size, v.price, v.inventory_count, 
                    v.discount_price, v.discount_end_date
@@ -770,15 +772,26 @@ def view_product(product_id):
             WHERE v.product_id = :pid
         """), {'pid': product_id}).mappings().all()
 
+        # Get product images
         images = conn.execute(text("""
             SELECT image_url FROM productimages WHERE product_id = :pid
         """), {'pid': product_id}).scalars().all()
+
+        # Get product reviews
+        reviews = conn.execute(text("""
+            SELECT r.rating, r.description, r.review_date, u.username AS reviewer_name
+            FROM reviews r
+            JOIN users u ON r.user_id = u.user_id
+            WHERE r.product_id = :pid
+            ORDER BY r.review_date DESC
+        """), {'pid': product_id}).mappings().all()
 
     return render_template(
         'viewProduct.html',
         product=product,
         variants=variants,
         images=images,
+        product_reviews=reviews,
         now=datetime.now()
     )
 
