@@ -619,8 +619,7 @@ def view_products():
     size = request.args.getlist('size')
     category = request.args.getlist('category')
     filter = request.args.get('filter')
-    
-    filter_ids = []
+    stock = request.args.get('stock')
         
     with engine.connect() as conn:
         if search == 'blank':
@@ -659,6 +658,14 @@ def view_products():
                     WHERE category IN :categories
                 """), {'categories': tuple(category)}).fetchall()
                 product_id_sets.append(set(row[0] for row in category_matches))
+                
+            if stock:
+                stock_matches = conn.execute(text("""
+                    SELECT product_id
+                    FROM productvariants
+                    WHERE inventory_count != 0
+                """)).fetchall()
+                product_id_sets.append(set(row[0] for row in stock_matches))
 
             if product_id_sets:
                 matched_ids = set.intersection(*product_id_sets)
