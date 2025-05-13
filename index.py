@@ -618,18 +618,9 @@ def view_products():
     color = request.args.getlist('color')
     size = request.args.getlist('size')
     category = request.args.getlist('category')
-    stock = request.args.getlist('stock')
     filter = request.args.get('filter')
-
     
-    print('---------------------')
-    print(f'This is the color {color}')
-    print(f'This is the size {size}')
-    print(f'This is the category {category}')
-    print(f'This is the stock {stock}')
-    print(f'This is the search {search}')
-    print(f'This is the filter {filter}')
-    print('---------------------')
+    filter_ids = []
         
     with engine.connect() as conn:
         if search == 'blank':
@@ -643,44 +634,50 @@ def view_products():
                 WHERE LOWER(p.title) = :search
             """), {'search': search.lower()}).fetchall()
         elif filter:
-            if color != []:
-                color_matches_id = conn.execute(text("""
+            product_id_sets = []
+
+            if color:
+                color_matches = conn.execute(text("""
                     SELECT product_id
                     FROM availablecolors
                     WHERE color_group IN :colors
                 """), {'colors': tuple(color)}).fetchall()
-            
-            if size != []:
-                size_matches_id = conn.execute(text("""
+                product_id_sets.append(set(row[0] for row in color_matches))
+
+            if size:
+                size_matches = conn.execute(text("""
                     SELECT product_id
                     FROM availablesizes
-                    WHERE size IN :size
-                """), {'size': tuple(size)}).fetchall()
-            
-            if category != []:
-                category_matches_id = conn.execute(text("""
+                    WHERE size IN :sizes
+                """), {'sizes': tuple(size)}).fetchall()
+                product_id_sets.append(set(row[0] for row in size_matches))
+
+            if category:
+                category_matches = conn.execute(text("""
                     SELECT product_id
                     FROM products
-                    WHERE category IN :category
-                """), {'category': tuple(category)}).fetchall()
+                    WHERE category IN :categories
+                """), {'categories': tuple(category)}).fetchall()
+                product_id_sets.append(set(row[0] for row in category_matches))
+
+            if product_id_sets:
+                matched_ids = set.intersection(*product_id_sets)
+                if not matched_ids:
+                    return render_template('products.html', products=[])
+
+                products = conn.execute(text("""
+                    SELECT p.product_id, p.title, p.description, p.warranty_period, u.name AS vendor_name
+                    FROM products p
+                    JOIN users u ON p.vendor_id = u.user_id
+                    WHERE p.product_id IN :ids
+                """), {'ids': tuple(matched_ids)}).fetchall()
+            else:
+                products = conn.execute(text("""
+                    SELECT p.product_id, p.title, p.description, p.warranty_period, u.name AS vendor_name
+                    FROM products p
+                    JOIN users u ON p.vendor_id = u.user_id
+                """)).fetchall()
                 
-                print(f'These are the categories to filter for {category}')
-                print(f'These are the categorys matched ids {category_matches_id}')
-            
-            
-            products = conn.execute(text("""
-                SELECT p.product_id, p.title, p.description, p.warranty_period, u.name AS vendor_name
-                FROM products p
-                JOIN users u ON p.vendor_id = u.user_id
-                WHERE p.product_id IN :matched_color_id
-                AND p.product_id IN :matched_category_id
-            """),{
-                    'matched_color_id': tuple(row[0] for row in color_matches_id),
-                    'matched_category_id': tuple(row[0] for row in category_matches_id),
-                }).fetchall()
-                      
-
-
         else:
             products = conn.execute(text("""
                 SELECT p.product_id, p.title, p.description, p.warranty_period, u.name AS vendor_name
@@ -720,6 +717,7 @@ def view_products():
         })
 
     return render_template('products.html', products=product_list)
+
 
 
 
